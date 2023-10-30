@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!--<groupId>org.example</groupId>
+    <artifactId>dipv0</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+   &lt;!&ndash; <groupId>ru.textanalysis.tawt</groupId>
+    <artifactId>tawt-jitpack-pom</artifactId>
+    <version>3.0.0</version>
+    <packaging>pom</packaging>&ndash;&gt;
+
+    <properties>
+&lt;!&ndash;        <version.tawt>8cd0ade30d-1</version.tawt>&ndash;&gt;
+        <maven.compiler.source>15</maven.compiler.source>
+        <maven.compiler.target>15</maven.compiler.target>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.github.jalexpr</groupId>
+            <artifactId>tawt</artifactId>
+            <version>master-SNAPSHOT</version>
+        </dependency>
+    </dependencies>
+
+    <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
+
+</project>-->
+
+    <groupId>ru.textanalysis.tawt</groupId>
+    <artifactId>tawt-jitpack-pom</artifactId>
+    <version>3.0.0</version>
+    <packaging>pom</packaging>
+
+    <properties>
+        <version.tawt>892bc1f3bb</version.tawt>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.github.jalexpr</groupId>
+            <artifactId>tawt</artifactId>
+            <version>${version.tawt}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.jalexpr.tawt</groupId>
+            <artifactId>gama</artifactId>
+            <version>${version.tawt}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>ru.textanalysis.tawt</groupId>
+                    <artifactId>jmorfsdk</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>ru.textanalysis.tawt</groupId>
+                    <artifactId>morphological-structures</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.github.jalexpr.tawt</groupId>
+            <artifactId>ambiguity-words-filter</artifactId>
+            <version>${version.tawt}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>ru.textanalysis.tawt</groupId>
+                    <artifactId>morphological-structures</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>ru.textanalysis.tawt</groupId>
+                    <artifactId>rules-for-compatibility</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.github.jalexpr.tawt</groupId>
+            <artifactId>jmorfsdk</artifactId>
+            <version>${version.tawt}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>ru.textanalysis.tawt</groupId>
+                    <artifactId>morphological-structures</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>ru.textanalysis.tawt</groupId>
+                    <artifactId>morphological-dictionary</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.github.jalexpr.tawt</groupId>
+            <artifactId>graphematic-parser</artifactId>
+            <version>${version.tawt}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.jalexpr.tawt</groupId>
+            <artifactId>morphological-structures</artifactId>
+            <version>${version.tawt}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.jalexpr.tawt</groupId>
+            <artifactId>rules-for-compatibility</artifactId>
+            <version>${version.tawt}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>ru.textanalysis.tawt</groupId>
+                    <artifactId>morphological-structures</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.github.jalexpr.tawt</groupId>
+            <artifactId>syntactic-parser</artifactId>
+            <version>${version.tawt}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>ru.textanalysis.tawt</groupId>
+                    <artifactId>morphological-structures</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>ru.textanalysis.tawt</groupId>
+                    <artifactId>gama</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>ru.textanalysis.tawt</groupId>
+                    <artifactId>ambiguity-words-filter</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>ru.textanalysis.tawt</groupId>
+                    <artifactId>rules-for-compatibility</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.github.jalexpr.tawt</groupId>
+            <artifactId>morphological-dictionary</artifactId>
+            <version>${version.tawt}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>ru.textanalysis.tawt</groupId>
+            <artifactId>morphological-structures</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>ru.textanalysis.tawt</groupId>
+            <artifactId>morphological-dictionary</artifactId>
+        </dependency>
+    </dependencies>
+
+    <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>17</source>
+                    <target>17</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

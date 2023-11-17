@@ -4,14 +4,15 @@ import ru.textanalysis.tawt.ms.grammeme.MorfologyParameters;
 import ru.textanalysis.tawt.ms.model.jmorfsdk.Form;
 
 import java.text.DecimalFormat;
+import java.util.Arrays;
 import java.util.Scanner;
 
 public class Var5 {
 /*
 ыгр, 76676! вора. ыв - 666, 88, ооыова.
 Есть заявки на 2 конфедерации и 1 мусульманское государство.
-1. Ледокол обошёл Антарктиду за 62 суток.
-как-то 5-ти раз-таки
+1. Чтобы обойти Антарктиду, ледоколу понадобилось не больше 62 суток.
+как-то 5-ти раз-таки, около 11-ти
 2) примерно 34,8 млн.
 3/4, 23 455 235 кошкам, 3.095, 2 тыс. кораблей
 1. Человек делает за день около 20 тысяч шагов, за год – до 7 миллионов, а за 70 лет – почти 500 миллионов
@@ -20,6 +21,8 @@ public class Var5 {
 2. В Мировом океане обитает 18 тысяч видов рыб. Наибольшая глубина Балтийского моря – 459 метров,
 Азовского – 14 метров. Самой длинной рекой в мире считается Нил, его длина – 6671 километр.
 Наибольшая глубина Байкала – 1637 метров.
+Во-2, в-20, в-21, в-19, в-97, в-11...
+4-ём или 4-ем стенам, в 1945-м, около 2007-го
 */
 
     public static void main(String[] args) {
@@ -126,11 +129,16 @@ public class Var5 {
                 }
                 result[i] = convertNumberToWords(Integer.parseInt(number.toString().replaceAll("[ .]", "")), forms);
 
-            } else if (word.matches("\\d+-(?:[йяе]|(?:[тм]и)|(?:[ыое]?[м]))")) {  // числа с наращениями: 1980-м, 5-ти, 16-е
+            } else if (word.matches("\\d+-((?:[тм]и)|(?:[её]м))")) {  // числа с наращениями: 5-ти, 4-ем
+                word = word.replace("ем", "ём");
                 result[i] = convertNumberToWords(Integer.parseInt(word.substring(0, word.indexOf("-"))), forms, word.substring(word.indexOf("-") + 1));
 
-            } else if (word.matches("в(о)*-(\\d)+")) {
-                // нужны порядковые
+            } else if (word.matches("[вВ](о)*-(\\d)+")) {
+                result[i] = convertEnumToWords(word);
+
+            } else if (word.matches("(\\d)+-([ыо]?й|[ыо]?м|о?е|а?я|ы?х|у?ю|го)")) {  // числа с наращениями: 1980-м, 16-е, 4-ом, 21-х
+                result[i] = convertOrdinalToWords(word);
+
             } else {
                 result[i] = word;
             }
@@ -160,7 +168,8 @@ public class Var5 {
                 forms[1] = form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Gender.class);
                 if (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.NOMINATIVE) {
                     break;
-                } else if (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.ACCUSATIVE2) {
+                } else if ((form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.ACCUSATIVE) ||
+                        (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.ACCUSATIVE2)) {
                     break;
                 }
             }
@@ -176,7 +185,7 @@ public class Var5 {
         String[] thousands = {"тысяча", "тысячи", "тысяч"};
         String[] millions = {"миллион", "миллиона", "миллионов"};
 
-        String[] onesOrdinal = {"нулевой", "первый", "второй", "третий", "четвертый", "пятый", "шестой", "седьмой", "восьмой", "девятый", "десятый", "одиннадцатый", "двенадцатый", "тринадцатый", "четырнадцатый", "пятнадцатый", "шестнадцатый", "семнадцатый", "восемнадцатый", "девятнадцатый"};
+        String[] onesOrdinal = {"", "первый", "второй", "третий", "четвертый", "пятый", "шестой", "седьмой", "восьмой", "девятый", "десятый", "одиннадцатый", "двенадцатый", "тринадцатый", "четырнадцатый", "пятнадцатый", "шестнадцатый", "семнадцатый", "восемнадцатый", "девятнадцатый"};
         String[] tensOrdinal = {"", "", "двадцатый", "тридцатый", "сороковой", "пятидесятый", "шестидесятый", "семидесятый", "восьмидесятый", "девяностый"};
         String[] hundredsOrdinal = {"", "сотый", "двухсотый"};
 
@@ -224,7 +233,81 @@ public class Var5 {
         return result.toString().trim();
     }
 
-    public static String convertFractionalNumberToWords(double number, long[] forms) {
+    public static String convertEnumToWords(String enumer) {
+        String[] onesOrdinal = {"", "первых", "вторых", "третьих", "четвертых", "пятых", "шестых", "седьмых", "восьмых", "девятых", "десятых", "одиннадцатых", "двенадцатых", "тринадцатых", "четырнадцатых", "пятнадцатых", "шестнадцатых", "семнадцатых", "восемнадцатых", "девятнадцатых"};
+        String[] tensOrdinal = {"", "", "двадцатых", "тридцатых", "сороковых", "пятидесятых", "шестидесятых", "семидесятых", "восьмидесятых", "девяностых"};
+
+        String[] result = enumer.split("-");
+        String word = convertNumberToWords(Integer.parseInt(result[1]), new long[]{0, 0});
+        String[] words = word.split(" ");
+        int number = Integer.parseInt(result[1]);
+
+        if (number < 20) {
+            words[words.length - 1] = onesOrdinal[number];
+        } else if (number % 10 != 0) {
+            words[words.length - 1] = onesOrdinal[number % 10];
+        } else {
+            words[words.length - 1] = tensOrdinal[number / 10];
+        }
+
+        if ((number < 20) || (number % 10 == 0)) {
+            return result[0] + "-" + String.join(" ", words);
+        } else {
+            return result[0] + " " + String.join(" ", words);
+        }
+    }
+
+    public static String convertOrdinalToWords(String ordinal) {
+        String[][] onesOrdinal = {{}, {"первый", "первого", "первому", "первом", "первым", "первая", "первой", "первую", "первое", "первые", "первых", "первым", "первыми"},
+                {"второй", "второго", "второму", "втором", "вторым", "вторая", "второй", "вторую", "второе", "вторые", "вторых", "вторым", "вторыми"},
+                {"третий", "третьего", "третьему", "третьем", "третьим", "третья", "третьей", "третью", "третье", "третьи", "третьих", "третьим", "третьими"},
+                {"четвертый", "четвертого", "четвертому", "четвертом", "четвертым", "четвертая", "четвертой", "четвертую", "четвертое", "четвертые", "четвертых", "четвертым", "четвертыми"},
+                {"пятый", "пятого", "пятому", "пятом", "пятым", "пятая", "пятой", "пятую", "пятое", "пятые", "пятых", "пятым", "пятыми"},
+                {"шестой", "шестого", "шестому", "шестом", "шестым", "шестая", "шестой", "шестую", "шестое", "шестые", "шестых", "шестым", "шестыми"},
+                {"седьмой", "седьмого", "седьмому", "седьмом", "седьмым", "седьмая", "седьмой", "седьмую", "седьмое", "седьмые", "седьмых", "седьмым", "седьмыми"},
+                {"восьмой", "восьмого", "восьмому", "восьмом", "восьмым", "восьмая", "восьмой", "восьмую", "восьмое", "восьмые", "восьмых", "восьмым", "восьмыми"},
+                {"девятый", "девятого", "девятому", "девятом", "девятым", "девятая", "девятой", "девятую", "девятое", "девятые", "девятых", "девятым", "девятыми"},
+                {},
+                {"одиннадцатый", "одиннадцатого", "одиннадцатому", "одиннадцатом", "одиннадцатым", "одиннадцатая", "одиннадцатой", "одиннадцатую", "одиннадцатое", "одиннадцатые", "одиннадцатых", "одиннадцатым", "одиннадцатыми"},
+                {"двенадцатый", "двенадцатого", "двенадцатому", "двенадцатом", "двенадцатым", "двенадцатая", "двенадцатой", "двенадцатую", "двенадцатое", "двенадцатые", "двенадцатых", "двенадцатым", "двенадцатыми"},
+                {"тринадцатый", "тринадцатого", "тринадцатому", "тринадцатом", "тринадцатым", "тринадцатая", "тринадцатой", "тринадцатую", "тринадцатое", "тринадцатые", "тринадцатых", "тринадцатым", "тринадцатыми"},
+                {"четырнадцатый", "четырнадцатого", "четырнадцатому", "четырнадцатом", "четырнадцатым", "четырнадцатая", "четырнадцатой", "четырнадцатую", "четырнадцатое", "четырнадцатые", "четырнадцатых", "четырнадцатым", "четырнадцатыми"},
+                {"пятнадцатый", "пятнадцатого", "пятнадцатому", "пятнадцатом", "пятнадцатым", "пятнадцатая", "пятнадцатой", "пятнадцатую", "пятнадцатое", "пятнадцатые", "пятнадцатых", "пятнадцатым", "пятнадцатыми"},
+                {"шестнадцатый", "шестнадцатого", "шестнадцатому", "шестнадцатым", "шестнадцатом", "шестнадцатая", "шестнадцатой", "шестнадцатую", "шестнадцатое", "шестнадцатые", "шестнадцатых", "шестнадцатым", "шестнадцатыми"},
+                {"семнадцатый", "семнадцатого", "семнадцатому", "семнадцатым", "семнадцатом", "семнадцатая", "семнадцатой", "семнадцатую", "семнадцатое", "семнадцатые", "семнадцатых", "семнадцатым", "семнадцатыми"},
+                {"восемнадцатый", "восемнадцатого", "восемнадцатому", "восемнадцатым", "восемнадцатом", "восемнадцатая", "восемнадцатой", "восемнадцатую", "восемнадцатое", "восемнадцатые", "восемнадцатых", "восемнадцатым", "восемнадцатыми"},
+                {"девятнадцатый", "девятнадцатого", "девятнадцатому", "девятнадцатым", "девятнадцатом", "девятнадцатая", "девятнадцатой", "девятнадцатую", "девятнадцатое", "девятнадцатые", "девятнадцатых", "девятнадцатым", "девятнадцатыми"}};
+
+        String[][] tensOrdinal = {{}, {"десятый", "десятого", "десятому", "десятом", "десятым", "десятая", "десятой", "десятую", "десятое", "десятые", "десятых", "десятым", "десятыми"},
+                {"двадцатый", "двадцатого", "двадцатому", "двадцатом", "двадцатым", "двадцатая", "двадцатой", "двадцатую", "двадцатое", "двадцатые", "двадцатых", "двадцатым", "двадцатыми"}};
+
+        String[][] hundredsOrdinal = {};  // добавлю остальные, если такой вариант замены порядковых вообще подходит
+
+        String[] result = ordinal.split("-");
+        String word = convertNumberToWords(Integer.parseInt(result[0]), new long[]{0, 0});
+        String[] words = word.split(" ");
+        int number = Integer.parseInt(result[0]);
+
+        String[] forms = {};
+        if (number < 20) {
+            forms = onesOrdinal[number];
+        } else if (number % 10 != 0) {
+            forms = onesOrdinal[number % 10];
+        } else {
+            forms = tensOrdinal[(number % 100) / 10];
+        }
+
+        for (String form : forms) {
+            if (form.endsWith(result[1])) {
+                words[words.length - 1] = form;
+                break;
+            }
+        }
+
+        return String.join(" ", words);
+    }
+
+    public static String convertFractionalNumberToWords(double number, long[] forms) {  // добавить склонение (думаю)
         number = ((number * 1e6)) / 1e6;
         int integerPart = (int) number;
 
@@ -255,22 +338,24 @@ public class Var5 {
 
     private static String getWordForms(int value, String[] forms, long identifier) {
         String result = "";
-        if (value % 100 >= 11 && value % 100 <= 19) {
-            result = forms[2];
-        } else if (value % 10 == 1) {
-            result = forms[0];
-        } else if (value % 10 >= 2 && value % 10 <= 4) {
-            result = forms[1];
-        } else {
-            result = forms[2];
-        }
+        if (identifier == 0) {
+            if (value % 100 >= 11 && value % 100 <= 19) {
+                result = forms[2];
+            } else if (value % 10 == 1) {
+                result = forms[0];
+            } else if (value % 10 >= 2 && value % 10 <= 4) {
+                result = forms[1];
+            } else {
+                result = forms[2];
+            }
 
 //        13:08:29.213 [main] DEBUG ru.textanalysis.tawt.jmorfsdk.JMorfSdkImpl - В словаре начальные формы для литерала: тысяч
 //        13:08:29.213 [main] DEBUG ru.textanalysis.tawt.jmorfsdk.JMorfSdkImpl - В словаре отсутствует производное слов, слова: тысяч с частью речи: 28 - числительное
 //        13:09:24.624 [main] DEBUG ru.textanalysis.tawt.jmorfsdk.JMorfSdkImpl - В словаре начальные формы для литерала: тысячи
 //        13:09:24.624 [main] DEBUG ru.textanalysis.tawt.jmorfsdk.JMorfSdkImpl - В словаре отсутствует производное слов, слова: тысячи с частью речи: 17 - существительное
 
-        if (identifier != 0) {
+        } else {
+            result = forms[0];
             JMorfSdk jMorfSdk = JMorfSdkFactory.loadFullLibrary();
             final String[] number = {""};
             for (String s : jMorfSdk.getDerivativeFormLiterals(result, MorfologyParameters.TypeOfSpeech.NOUN)) {
@@ -282,10 +367,7 @@ public class Var5 {
                     }
                 }
             }
-//            if (number[0].length() > 0) {
-//                System.out.println("форма: " + number[0]);
-                return number[0];
-//            }
+            return number[0];
         }
         return result;
     }
@@ -297,8 +379,10 @@ public class Var5 {
 //            18:03:36.505 [main] DEBUG ru.textanalysis.tawt.jmorfsdk.JMorfSdkImpl - В словаре отсутствует производное слов, слова: один с частью речи: 17 - существительное
 //            18:03:36.507 [main] DEBUG ru.textanalysis.tawt.jmorfsdk.JMorfSdkImpl - В словаре отсутствует производное слов, слова: один с частью речи: 28 - числительное
 //            19:03:14.942 [main] DEBUG ru.textanalysis.tawt.jmorfsdk.JMorfSdkImpl - В словаре отсутствует производное слов, слова: восемь с частью речи: 29 - собирательное
+//            интересная ситуация с "тысячей" и "миллионом": "тысяча" есть в библиотеке только как существительное, а "миллион" - только как числительное
+
             byte param;
-            if (num.equals("один")) {
+            if (num.startsWith("тысяч")) {
                 param = MorfologyParameters.TypeOfSpeech.NOUN;
             } else {
                 param = MorfologyParameters.TypeOfSpeech.NUMERAL;
@@ -321,7 +405,7 @@ public class Var5 {
             JMorfSdk jMorfSdk = JMorfSdkFactory.loadFullLibrary();
 
             byte param;
-            if (num.equals("один")) {
+            if (num.startsWith("тысяч")) {
                 param = MorfologyParameters.TypeOfSpeech.NOUN;
             } else {
                 param = MorfologyParameters.TypeOfSpeech.NUMERAL;
@@ -335,7 +419,9 @@ public class Var5 {
                             System.out.println("число: " + form);
                             return form.getMyString();
                         }
-                    } else if (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.ACCUSATIVE2) {
+
+                    } else if ((form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.ACCUSATIVE) ||
+                            (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.ACCUSATIVE2)) {
                         if (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Gender.class) == forms[1]) {
                             System.out.println("число: " + form);
                             return form.getMyString();
@@ -353,7 +439,6 @@ public class Var5 {
         for (String s : jMorfSdk.getDerivativeFormLiterals(num, MorfologyParameters.TypeOfSpeech.NUMERAL)) {
             System.out.println(s);
             for (Form form : jMorfSdk.getOmoForms(s)) {
-                System.out.println("наращение в методе: " + form.getMyString().substring(buildup.length()));
                 if (form.getMyString().substring(buildup.length()).endsWith(buildup)) {
                     System.out.println("число: " + form);
                     return form.getMyString();
@@ -364,7 +449,6 @@ public class Var5 {
         for (String s : jMorfSdk.getDerivativeFormLiterals(num, MorfologyParameters.TypeOfSpeech.COLLECTIVE_NUMERAL)) {  // без результата
             System.out.println(s);
             for (Form form : jMorfSdk.getOmoForms(s)) {
-                System.out.println("наращение в методе: " + form.getMyString().substring(buildup.length()));
                 if (form.getMyString().substring(buildup.length()).endsWith(buildup)) {
                     System.out.println("число: " + form);
                     return form.getMyString();
@@ -372,7 +456,7 @@ public class Var5 {
             }
         }
 
-        //  порядковые не нашлись в библиотеке, есть только собирательные, а в прилагательных тоже ничего, образованного от числительных.
+        //  порядковые не нашлись в библиотеке, есть только собирательные, а в прилагательных тоже ничего, образованного от числительных
         //  однако собирательные от числительных тоже не находятся (через getDerivativeFormLiterals)
         return "";
     }

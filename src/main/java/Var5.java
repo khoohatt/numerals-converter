@@ -11,6 +11,7 @@ public class Var5 {
 /*
 ыгр, 76676! вора. ыв - 666, 88, ооыова.
 Есть заявки на 2 конфедерации и 1 мусульманское государство.
+Есть заявки на 2 чудесные конфедерации и 32 мусульманские страны.
 1. Чтобы обойти Антарктиду, ледоколу понадобилось не больше 62 суток.
 как-то 5-ти раз-таки, около 11-ти
 2) примерно 34,8 млн.
@@ -85,7 +86,7 @@ public class Var5 {
                     }
                 }
                 if (words.length > i + 2) {
-                    forms = getForms(words[i + 2], (int) Double.parseDouble(word.replace(",", ".")) % 10 == 1);
+                    forms = getForms(words, i, (int) Double.parseDouble(word.replace(",", ".")) % 10 == 1);
                 }
                 forms[1] = 8;
                 result[i] = convertFractionalNumberToWords(Double.parseDouble(word.replace(",", ".")), forms);
@@ -95,7 +96,7 @@ public class Var5 {
                 word += words[i];
                 double number = Double.parseDouble(word.split("/")[0]) / Double.parseDouble(word.split("/")[1]);
                 if (words.length > i + 2) {
-                    forms = getForms(words[i + 2], (int) number % 10 == 1);
+                    forms = getForms(words, i, (int) number % 10 == 1);
                 }
                 forms[1] = 8;
                 result[i] = convertFractionalNumberToWords(number, forms);
@@ -124,7 +125,7 @@ public class Var5 {
                         }
                     }
                     if (words.length > i + 2) {
-                        forms = getForms(words[i + 2], Integer.parseInt(word) % 10 == 1);
+                        forms = getForms(words, i, Integer.parseInt(word) % 10 == 1);
                     }
                 }
                 result[i] = convertNumberToWords(Integer.parseInt(number.toString().replaceAll("[ .]", "")), forms);
@@ -154,25 +155,30 @@ public class Var5 {
         return finalText.toString();
     }
 
-    public static long[] getForms(String word, boolean single) {
+    public static long[] getForms(String[] words, int i, boolean single) {
         JMorfSdk jMorfSdk = JMorfSdkFactory.loadFullLibrary();
         long[] forms = new long[2];
 
-        for (Form form : jMorfSdk.getOmoForms(word)) {
-            System.out.println("слово: " + form);
+        ++i;
+        while (i < words.length && !words[i].equals(".")) {
 
-            if (form.getTypeOfSpeech() == MorfologyParameters.TypeOfSpeech.NOUN
-                    && (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Numbers.class) == MorfologyParameters.Numbers.PLURAL ^ single)) {
-                System.out.println("существительное: " + form);
-                forms[0] = form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER);
-                forms[1] = form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Gender.class);
-                if (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.NOMINATIVE) {
-                    break;
-                } else if ((form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.ACCUSATIVE) ||
-                        (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.ACCUSATIVE2)) {
-                    break;
+            for (Form form : jMorfSdk.getOmoForms(words[i])) {
+                System.out.println("слово: " + form);
+
+                if (form.getTypeOfSpeech() == MorfologyParameters.TypeOfSpeech.NOUN
+                        && (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Numbers.class) == MorfologyParameters.Numbers.PLURAL ^ single)) {
+                    System.out.println("существительное: " + form);
+                    forms[0] = form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER);
+                    forms[1] = form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Gender.class);
+                    if (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.NOMINATIVE) {
+                        break;
+                    } else if ((form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.ACCUSATIVE) ||
+                            (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.ACCUSATIVE2)) {
+                        break;
+                    }
                 }
             }
+            ++i;
         }
         //        jMorfSdk.finish();
         return forms;
@@ -320,20 +326,48 @@ public class Var5 {
         String fractionalWords = convertNumberToWords(fractionalPart, forms);
 
         if (fractionalStr.length() > 5) {
-            return integerWords + " целых " + fractionalWords + " миллионных";
+            integerWords += " целых " + fractionalWords + " миллионных";
         } else if (fractionalStr.length() > 4) {
-            return integerWords + " целых " + fractionalWords + " стотысячных";
+            integerWords += " целых " + fractionalWords + " стотысячных";
         } else if (fractionalStr.length() > 3) {
-            return integerWords + " целых " + fractionalWords + " десятитысячных";
+            integerWords += " целых " + fractionalWords + " десятитысячных";
         } else if (fractionalStr.length() > 2) {
-            return integerWords + " целых " + fractionalWords + " тысячных";
+            integerWords += " целых " + fractionalWords + " тысячных";
         } else if (fractionalStr.length() > 1) {
-            return integerWords + " целых " + fractionalWords + " сотых";
+            integerWords += " целых " + fractionalWords + " сотых";
         } else if (fractionalStr.length() == 1) {
-            return integerWords + " целых " + fractionalWords + " десятых";
-        } else {
-            return integerWords;
+           integerWords += " " + getFractionalForm("целых", forms) + " " + fractionalWords + " " + getFractionalForm("десятых", forms);
         }
+
+        return integerWords;
+    }
+
+    private static String getFractionalForm(String word, long[] forms) {
+
+//        ЧАСТЬ РЕЧИ - [17, 17, 18, 18, 18]
+//        13:12:40.495 [main] DEBUG ru.textanalysis.tawt.jmorfsdk.JMorfSdkImpl - В словаре начальные формы для литерала: целых
+//        13:12:40.496 [main] DEBUG ru.textanalysis.tawt.jmorfsdk.JMorfSdkImpl - В словаре отсутствует производное слов, слова: целых с частью речи: 18
+//        ЧАСТЬ РЕЧИ - [18, 18, 18]
+//        13:12:40.497 [main] DEBUG ru.textanalysis.tawt.jmorfsdk.JMorfSdkImpl - В словаре начальные формы для литерала: десятых
+//        13:12:40.497 [main] DEBUG ru.textanalysis.tawt.jmorfsdk.JMorfSdkImpl - В словаре отсутствует производное слов, слова: десятых с частью речи: 18
+//        ???
+
+        JMorfSdk jMorfSdk = JMorfSdkFactory.loadFullLibrary();
+        System.out.println("ЧАСТЬ РЕЧИ - " + jMorfSdk.getTypeOfSpeeches(word));
+        for (String s : jMorfSdk.getDerivativeFormLiterals(word, MorfologyParameters.TypeOfSpeech.ADJECTIVE_FULL)) {
+            System.out.println(s);
+            for (Form form : jMorfSdk.getOmoForms(s)) {
+                if ((form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == forms[0])
+                && (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Numbers.PLURAL) == MorfologyParameters.Numbers.PLURAL)) {
+                    if ((form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Gender.class) == 0)
+                            || (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Gender.class) == forms[1])) {
+                        System.out.println("прилагательное: " + form);
+                        return form.getMyString();
+                    }
+                }
+            }
+        }
+        return "";
     }
 
     private static String getWordForms(int value, String[] forms, long identifier) {
@@ -373,6 +407,14 @@ public class Var5 {
     }
 
     private static String getFormedNumber(long[] forms, String num) {
+
+        byte param;
+        if (num.startsWith("тысяч")) {
+            param = MorfologyParameters.TypeOfSpeech.NOUN;
+        } else {
+            param = MorfologyParameters.TypeOfSpeech.NUMERAL;
+        }
+
         if (forms[0] != 0) {
             JMorfSdk jMorfSdk = JMorfSdkFactory.loadFullLibrary();
 
@@ -380,13 +422,6 @@ public class Var5 {
 //            18:03:36.507 [main] DEBUG ru.textanalysis.tawt.jmorfsdk.JMorfSdkImpl - В словаре отсутствует производное слов, слова: один с частью речи: 28 - числительное
 //            19:03:14.942 [main] DEBUG ru.textanalysis.tawt.jmorfsdk.JMorfSdkImpl - В словаре отсутствует производное слов, слова: восемь с частью речи: 29 - собирательное
 //            интересная ситуация с "тысячей" и "миллионом": "тысяча" есть в библиотеке только как существительное, а "миллион" - только как числительное
-
-            byte param;
-            if (num.startsWith("тысяч")) {
-                param = MorfologyParameters.TypeOfSpeech.NOUN;
-            } else {
-                param = MorfologyParameters.TypeOfSpeech.NUMERAL;
-            }
 
             for (String s : jMorfSdk.getDerivativeFormLiterals(num, param)) {
                 System.out.println(s);
@@ -403,13 +438,6 @@ public class Var5 {
             return "";
         } else if (forms[1] != 0) {
             JMorfSdk jMorfSdk = JMorfSdkFactory.loadFullLibrary();
-
-            byte param;
-            if (num.startsWith("тысяч")) {
-                param = MorfologyParameters.TypeOfSpeech.NOUN;
-            } else {
-                param = MorfologyParameters.TypeOfSpeech.NUMERAL;
-            }
 
             for (String s : jMorfSdk.getDerivativeFormLiterals(num, param)) {
                 System.out.println(s);

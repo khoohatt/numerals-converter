@@ -15,7 +15,8 @@ public class Var5 {
 1. Чтобы обойти Антарктиду, ледоколу понадобилось не больше 62 суток.
 как-то 5-ти раз-таки, около 11-ти
 2) примерно 34,8 млн.
-3/4, 23 455 235 кошкам, 3.095, 2 тыс. кораблей
+3/4, 3,2, 3/2, 3.095 часов, 2 тыс. кораблей
+23 455 235 кошкам
 1. Человек делает за день около 20 тысяч шагов, за год – до 7 миллионов, а за 70 лет – почти 500 миллионов
 шагов. Это значит, что за всю свою жизнь человек мог бы 9 раз обойти земной шар по экватору или
 преодолеть расстояние от Земли до Луны.
@@ -29,13 +30,6 @@ public class Var5 {
     public static void main(String[] args) {
 
         String input = " ";
-
-
-//        while (!scanner.nextLine().equals("")) {
-//            string += scanner.nextLine();
-//
-//        }
-//        scanner.forEachRemaining(string:: string += s);
         StringBuilder sb = new StringBuilder();
 
         while (!input.equals("")) {
@@ -336,7 +330,8 @@ public class Var5 {
         } else if (fractionalStr.length() > 1) {
             integerWords += " целых " + fractionalWords + " сотых";
         } else if (fractionalStr.length() == 1) {
-           integerWords += " " + getFractionalForm("целых", forms) + " " + fractionalWords + " " + getFractionalForm("десятых", forms);
+            integerWords += " целых " + fractionalWords + " десятых";
+//           integerWords += " " + getFractionalForm("целых", forms) + " " + fractionalWords + " " + getFractionalForm("десятых", forms);
         }
 
         return integerWords;
@@ -372,7 +367,8 @@ public class Var5 {
 
     private static String getWordForms(int value, String[] forms, long identifier) {
         String result = "";
-        if (identifier == 0) {
+        System.out.println(identifier);
+        if (identifier == 0 || identifier == 512) {
             if (value % 100 >= 11 && value % 100 <= 19) {
                 result = forms[2];
             } else if (value % 10 == 1) {

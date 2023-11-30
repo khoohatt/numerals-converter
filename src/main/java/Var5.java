@@ -4,18 +4,17 @@ import ru.textanalysis.tawt.ms.grammeme.MorfologyParameters;
 import ru.textanalysis.tawt.ms.model.jmorfsdk.Form;
 
 import java.text.DecimalFormat;
-import java.util.Arrays;
 import java.util.Scanner;
 
 public class Var5 {
 /*
 ыгр, 76676! вора. ыв - 666, 88, ооыова.
 Есть заявки на 2 конфедерации и 1 мусульманское государство.
-Есть заявки на 2 чудесные конфедерации и 32 мусульманские страны.
+Есть заявки на 2 чудесные конфедерации и 32 мусульманских государства.
 1. Чтобы обойти Антарктиду, ледоколу понадобилось не больше 62 суток.
-как-то 5-ти раз-таки, около 11-ти
+как-то 5-ти раз-таки, около 11-ти, 35-й час или 45й год
 2) примерно 34,8 млн.
-3/4, 3,2, 3/2, 3.095 часов, 2 тыс. кораблей
+3/4, 3,2, 5/2, 3.095 часов, 2 тыс. кораблей
 23 455 235 кошкам
 1. Человек делает за день около 20 тысяч шагов, за год – до 7 миллионов, а за 70 лет – почти 500 миллионов
 шагов. Это значит, что за всю свою жизнь человек мог бы 9 раз обойти земной шар по экватору или
@@ -25,16 +24,20 @@ public class Var5 {
 Наибольшая глубина Байкала – 1637 метров.
 Во-2, в-20, в-21, в-19, в-97, в-11...
 4-ём или 4-ем стенам, в 1945-м, около 2007-го
+деньги: 3,4 рубля, а еще 5792,34 дол. или 9,3345 долларов; 62873,2952 руб, 4,2 руб.
 */
 
-    public static void main(String[] args) {
+    // исправить: ноль, номера телефонов, годы без наращений, деньги, 10-19- в годах, наращения не по правилам,
+    // цифры перед тысячами: 2 334 232 рубля, 666 666 666 рублей, "2" в деньгах, склонение в дробях,
+    // сложить все в отдельный класс
 
+    public static void main(String[] args) {
         String input = " ";
         StringBuilder sb = new StringBuilder();
 
         while (!input.equals("")) {
             Scanner scanner = new Scanner(System.in);
-            System.out.print("\n\nтекст: ");
+            System.out.print("текст: ");
             while (!input.equals("")) {
                 input = scanner.nextLine();
                 sb.append(input);
@@ -44,8 +47,7 @@ public class Var5 {
 
             if (!input.equals("")) {
 
-//            string = scanner.nextLine();
-                System.out.print("результат: " + replaceNumber(input));
+                System.out.print("результат: " + replaceNumber(input) + "\n\n");
                 sb.setLength(0);
                 input = " ";
             }
@@ -65,6 +67,10 @@ public class Var5 {
             if ((words.length > i + 1) && (word.matches("^\\d+") && (words[i + 1].equals(".") || words[i + 1].equals(")")))) {  // нумерованный список
                 System.out.println("список");
                 result[i] = word;
+
+            } else if ((word.matches("^(\\+)?(?:[0-9] ?){6,14}[0-9]$"))) {  // номера телефонов (пока не всех)
+                result[i] = word;
+
             } else if ((words.length > i + 1) && (words[i + 1].matches("(,\\d+)+"))) {  // дробные числа через запятую: 34,9; 1341,0021
                 i++;
                 word += words[i];
@@ -83,7 +89,12 @@ public class Var5 {
                     forms = getForms(words, i, (int) Double.parseDouble(word.replace(",", ".")) % 10 == 1);
                 }
                 forms[1] = 8;
-                result[i] = convertFractionalNumberToWords(Double.parseDouble(word.replace(",", ".")), forms);
+                if (word.contains(",") && (words.length > i + 2) && (words[i + 2].matches("(руб[а-я]*)|(дол[а-я]*)|(евр[а-я]*)"))) {
+                    result[i] = convertFractionalNumberToWords(Double.parseDouble(word.replace(",", ".")), forms, words[i + 2]);
+                    words[i + 1] = words[i + 2] = "";
+                } else {
+                    result[i] = convertFractionalNumberToWords(Double.parseDouble(word.replace(",", ".")), forms);
+                }
 
             } else if ((words.length > i + 1) && (words[i + 1].matches("/\\d+"))) {  // дробные числа через слэш: 3/6, 929/2913
                 i++;
@@ -131,7 +142,7 @@ public class Var5 {
             } else if (word.matches("[вВ](о)*-(\\d)+")) {
                 result[i] = convertEnumToWords(word);
 
-            } else if (word.matches("(\\d)+-([ыо]?й|[ыо]?м|о?е|а?я|ы?х|у?ю|го)")) {  // числа с наращениями: 1980-м, 16-е, 4-ом, 21-х
+            } else if (word.matches("(\\d)+(-)*([ыо]?й|[ыо]?м|о?е|а?я|ы?х|у?ю|го)")) {  // числа с наращениями: 1980-м, 16-е, 4-ом, 21-х, 5-й, 5й
                 result[i] = convertOrdinalToWords(word);
 
             } else {
@@ -178,18 +189,18 @@ public class Var5 {
         return forms;
     }
 
-    public static String convertNumberToWords(int num, long[] forms, String... buildup) {
+    public static String convertNumberToWords(int num, long[] forms, String... buildup) {  // ноль добавить
         String[] ones = {"ноль", "один", "два", "три", "четыре", "пять", "шесть", "семь", "восемь", "девять", "десять", "одиннадцать", "двенадцать", "тринадцать", "четырнадцать", "пятнадцать", "шестнадцать", "семнадцать", "восемнадцать", "девятнадцать"};
         String[] tens = {"", "", "двадцать", "тридцать", "сорок", "пятьдесят", "шестьдесят", "семьдесят", "восемьдесят", "девяносто"};
         String[] hundreds = {"", "сто", "двести", "триста", "четыреста", "пятьсот", "шестьсот", "семьсот", "восемьсот", "девятьсот"};
         String[] thousands = {"тысяча", "тысячи", "тысяч"};
         String[] millions = {"миллион", "миллиона", "миллионов"};
 
-        String[] onesOrdinal = {"", "первый", "второй", "третий", "четвертый", "пятый", "шестой", "седьмой", "восьмой", "девятый", "десятый", "одиннадцатый", "двенадцатый", "тринадцатый", "четырнадцатый", "пятнадцатый", "шестнадцатый", "семнадцатый", "восемнадцатый", "девятнадцатый"};
-        String[] tensOrdinal = {"", "", "двадцатый", "тридцатый", "сороковой", "пятидесятый", "шестидесятый", "семидесятый", "восьмидесятый", "девяностый"};
-        String[] hundredsOrdinal = {"", "сотый", "двухсотый"};
-
         StringBuilder result = new StringBuilder();
+
+        if (num == 0) {
+            return result.append(getFormedNumber(forms, ones[0])).toString();
+        }
 
         if (num / 1000000 > 0) {
             result.append(convertNumberToWords(num / 1000000, forms)).append(" ").append(getWordForms(num / 1000000, millions, forms[0])).append(" ");
@@ -234,7 +245,7 @@ public class Var5 {
     }
 
     public static String convertEnumToWords(String enumer) {
-        String[] onesOrdinal = {"", "первых", "вторых", "третьих", "четвертых", "пятых", "шестых", "седьмых", "восьмых", "девятых", "десятых", "одиннадцатых", "двенадцатых", "тринадцатых", "четырнадцатых", "пятнадцатых", "шестнадцатых", "семнадцатых", "восемнадцатых", "девятнадцатых"};
+        String[] onesOrdinal = {"нулевых", "первых", "вторых", "третьих", "четвертых", "пятых", "шестых", "седьмых", "восьмых", "девятых", "десятых", "одиннадцатых", "двенадцатых", "тринадцатых", "четырнадцатых", "пятнадцатых", "шестнадцатых", "семнадцатых", "восемнадцатых", "девятнадцатых"};
         String[] tensOrdinal = {"", "", "двадцатых", "тридцатых", "сороковых", "пятидесятых", "шестидесятых", "семидесятых", "восьмидесятых", "девяностых"};
 
         String[] result = enumer.split("-");
@@ -258,7 +269,8 @@ public class Var5 {
     }
 
     public static String convertOrdinalToWords(String ordinal) {
-        String[][] onesOrdinal = {{}, {"первый", "первого", "первому", "первом", "первым", "первая", "первой", "первую", "первое", "первые", "первых", "первым", "первыми"},
+        String[][] onesOrdinal = {{"нулевой", "нулевого", "нулевому", "нулевого", "нулевым", "нулевом", "нулевая", "нулевой", "нулевой", "нулевую", "нулевой", "нулевой", "нулевое", "нулевого", "нулевому", "нулевое", "нулевым", "нулевом", "нулевые", "нулевых", "нулевым", "нулевых", "нулевыми", "нулевых"},
+                {"первый", "первого", "первому", "первом", "первым", "первая", "первой", "первую", "первое", "первые", "первых", "первым", "первыми"},
                 {"второй", "второго", "второму", "втором", "вторым", "вторая", "второй", "вторую", "второе", "вторые", "вторых", "вторым", "вторыми"},
                 {"третий", "третьего", "третьему", "третьем", "третьим", "третья", "третьей", "третью", "третье", "третьи", "третьих", "третьим", "третьими"},
                 {"четвертый", "четвертого", "четвертому", "четвертом", "четвертым", "четвертая", "четвертой", "четвертую", "четвертое", "четвертые", "четвертых", "четвертым", "четвертыми"},
@@ -281,18 +293,26 @@ public class Var5 {
         String[][] tensOrdinal = {{}, {"десятый", "десятого", "десятому", "десятом", "десятым", "десятая", "десятой", "десятую", "десятое", "десятые", "десятых", "десятым", "десятыми"},
                 {"двадцатый", "двадцатого", "двадцатому", "двадцатом", "двадцатым", "двадцатая", "двадцатой", "двадцатую", "двадцатое", "двадцатые", "двадцатых", "двадцатым", "двадцатыми"}};
 
-        String[][] hundredsOrdinal = {};  // добавлю остальные, если такой вариант замены порядковых вообще подходит
-
-        String[] result = ordinal.split("-");
+        String result[] = new String[2];
+        if (ordinal.contains("-")) {
+            result = ordinal.split("-");
+        } else {
+            result[0] = ordinal.replaceAll("\\D+", "");
+            result[1] = ordinal.replaceAll("\\d+", "");
+        }
         String word = convertNumberToWords(Integer.parseInt(result[0]), new long[]{0, 0});
         String[] words = word.split(" ");
         int number = Integer.parseInt(result[0]);
 
-        String[] forms = {};
+        String[] forms;
         if (number < 20) {
             forms = onesOrdinal[number];
         } else if (number % 10 != 0) {
-            forms = onesOrdinal[number % 10];
+            if ((number % 100 < 20) && (number % 100 > 9)) {
+                forms = onesOrdinal[number % 100];
+            } else {
+                forms = onesOrdinal[number % 10];
+            }
         } else {
             forms = tensOrdinal[(number % 100) / 10];
         }
@@ -307,7 +327,7 @@ public class Var5 {
         return String.join(" ", words);
     }
 
-    public static String convertFractionalNumberToWords(double number, long[] forms) {  // добавить склонение (думаю)
+    public static String convertFractionalNumberToWords(double number, long[] forms, String... currency) {  // добавить склонение (думаю)
         number = ((number * 1e6)) / 1e6;
         int integerPart = (int) number;
 
@@ -316,28 +336,99 @@ public class Var5 {
         String fractionalStr = numberStr.substring(numberStr.indexOf(',') + 1).replaceAll("0*$", "");
         int fractionalPart = !fractionalStr.equals("") ? Integer.parseInt(fractionalStr) : 0;
 
-        String integerWords = integerPart != 0 ? convertNumberToWords(integerPart, forms) : "ноль";
-        String fractionalWords = convertNumberToWords(fractionalPart, forms);
+        if (currency.length != 0) {
+            if (fractionalPart < 10) {
+                fractionalPart *= 10;
+            } else if (fractionalPart > 99) {
+                fractionalPart = fractionalPart / (int) (Math.pow(10, (int) (Math.log10(fractionalPart) + 1) - 2));
+            }
 
-        if (fractionalStr.length() > 5) {
-            integerWords += " целых " + fractionalWords + " миллионных";
-        } else if (fractionalStr.length() > 4) {
-            integerWords += " целых " + fractionalWords + " стотысячных";
-        } else if (fractionalStr.length() > 3) {
-            integerWords += " целых " + fractionalWords + " десятитысячных";
-        } else if (fractionalStr.length() > 2) {
-            integerWords += " целых " + fractionalWords + " тысячных";
-        } else if (fractionalStr.length() > 1) {
-            integerWords += " целых " + fractionalWords + " сотых";
-        } else if (fractionalStr.length() == 1) {
-            integerWords += " целых " + fractionalWords + " десятых";
+            String integerWords = integerPart != 0 ? convertNumberToWords(integerPart, new long[]{forms[0], 0}) : "ноль";
+            String fractionalWords;
+
+            switch (currency[0].substring(0, 3)) {
+                case "руб":
+                    fractionalWords = convertNumberToWords(fractionalPart, new long[]{forms[0], 8});
+                    break;
+
+                case "дол":
+                    fractionalWords = convertNumberToWords(fractionalPart, new long[]{forms[0], 0});
+                    break;
+
+                default:
+                    return convertFractionalNumberToWords(number, forms);
+            }
+
+            forms[1] = 0;
+            String whole, fractional;
+
+            switch (currency[0].substring(0, 3)) {
+                case "руб":
+                    if ((integerPart % 100 < 21 && integerPart % 100 > 10) || integerPart % 10 == 5 || integerPart % 10 == 6 || integerPart % 10 == 7 || integerPart % 10 == 8 || integerPart % 10 == 9 || integerPart % 10 == 0) {
+                        whole = " рублей ";
+                    } else if (integerPart % 10 == 1) {
+                        whole = " рубль ";
+                    } else {
+                        whole = " рубля ";
+                    }
+
+                    if ((fractionalPart % 100 < 21 && fractionalPart % 100 > 10) || fractionalPart % 10 == 5 || fractionalPart % 10 == 6 || fractionalPart % 10 == 7 || fractionalPart % 10 == 8 || fractionalPart % 10 == 9 || fractionalPart % 10 == 0) {
+                        fractional = " копеек";
+                    } else if (fractionalPart % 10 == 1) {
+                        fractional = " копейка";
+                    } else {
+                        fractional = " копейки";
+                    }
+                    break;
+
+                case "дол":
+                    if ((integerPart % 100 < 21 && integerPart % 100 > 10) || integerPart % 10 == 5 || integerPart % 10 == 6 || integerPart % 10 == 7 || integerPart % 10 == 8 || integerPart % 10 == 9 || integerPart % 10 == 0) {
+                        whole = " долларов ";
+                    } else if (integerPart % 10 == 1) {
+                        whole = " доллар ";
+                    } else {
+                        whole = " доллара ";
+                    }
+
+                    if ((fractionalPart % 100 < 21 && fractionalPart % 100 > 10) || fractionalPart % 10 == 5 || fractionalPart % 10 == 6 || fractionalPart % 10 == 7 || fractionalPart % 10 == 8 || fractionalPart % 10 == 9 || fractionalPart % 10 == 0) {
+                        fractional = " центов";
+                    } else if (fractionalPart % 10 == 1) {
+                        fractional = " цент";
+                    } else {
+                        fractional = " цента";
+                    }
+                    break;
+
+                default:
+                    return convertFractionalNumberToWords(number, forms);
+            }
+            integerWords += whole + fractionalWords + fractional;
+
+            return integerWords;
+        } else {
+            String integerWords = integerPart != 0 ? convertNumberToWords(integerPart, forms) : "ноль";
+            String fractionalWords = convertNumberToWords(fractionalPart, forms);
+
+            if (fractionalStr.length() > 5) {
+                integerWords += " целых " + fractionalWords + " миллионных";
+            } else if (fractionalStr.length() > 4) {
+                integerWords += " целых " + fractionalWords + " стотысячных";
+            } else if (fractionalStr.length() > 3) {
+                integerWords += " целых " + fractionalWords + " десятитысячных";
+            } else if (fractionalStr.length() > 2) {
+                integerWords += " целых " + fractionalWords + " тысячных";
+            } else if (fractionalStr.length() > 1) {
+                integerWords += " целых " + fractionalWords + " сотых";
+            } else if (fractionalStr.length() == 1) {
+                integerWords += " целых " + fractionalWords + " десятых";
 //           integerWords += " " + getFractionalForm("целых", forms) + " " + fractionalWords + " " + getFractionalForm("десятых", forms);
-        }
+            }
 
-        return integerWords;
+            return integerWords;
+        }
     }
 
-    private static String getFractionalForm(String word, long[] forms) {
+    private static String getFractionalForm(String word, long[] forms) {  // пока совсем не работает...
 
 //        ЧАСТЬ РЕЧИ - [17, 17, 18, 18, 18]
 //        13:12:40.495 [main] DEBUG ru.textanalysis.tawt.jmorfsdk.JMorfSdkImpl - В словаре начальные формы для литерала: целых
@@ -366,8 +457,7 @@ public class Var5 {
     }
 
     private static String getWordForms(int value, String[] forms, long identifier) {
-        String result = "";
-        System.out.println(identifier);
+        String result;
         if (identifier == 0 || identifier == 512) {
             if (value % 100 >= 11 && value % 100 <= 19) {
                 result = forms[2];
@@ -405,7 +495,7 @@ public class Var5 {
     private static String getFormedNumber(long[] forms, String num) {
 
         byte param;
-        if (num.startsWith("тысяч")) {
+        if (num.startsWith("тысяч") || num.startsWith("ноль")) {
             param = MorfologyParameters.TypeOfSpeech.NOUN;
         } else {
             param = MorfologyParameters.TypeOfSpeech.NUMERAL;
@@ -420,11 +510,11 @@ public class Var5 {
 //            интересная ситуация с "тысячей" и "миллионом": "тысяча" есть в библиотеке только как существительное, а "миллион" - только как числительное
 
             for (String s : jMorfSdk.getDerivativeFormLiterals(num, param)) {
-                System.out.println(s);
                 for (Form form : jMorfSdk.getOmoForms(s)) {
                     if ((form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == forms[0])) {
                         if ((form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Gender.class) == 0)
-                                || (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Gender.class) == forms[1])) {
+                                || (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Gender.class) == forms[1])
+                                || (s.equals("ноль"))) {
                             System.out.println("число: " + form);
                             return form.getMyString();
                         }

@@ -7,25 +7,26 @@ import java.text.DecimalFormat;
 
 public class NumeralsConverter {
 
-    public NumeralsConverter() {
-    }
+    public NumeralsConverter() { }
 
     public String replaceNumber(String text) {
         long[] forms;  // падеж, род
-
         String[] words = text.split("((?<![\\p{L}\\p{N}_-])|(?![\\p{L}\\p{N}_-]))((?<![,./])|(?!(\\p{N})))");  // (?=!(\\p{N}+[,.]\\p{N}+))  |((?<![.,])|(?![\\p{N}.,]))|((?<![\\p{N}.,])|(?![.,]))");  // (?<![\p{L}\p{N}_-])|(?![\p{L}\p{N}_-])|(?<=\d)[,.](?=\d)  text.split("(?<!\\d),(?!\\d)|(?<!-)\s+");  // text.split("(?<![\\p{L}\\p{N}_-])|(?![\\p{L}\\p{N}_-])");
-        String[] result = new String[words.length];
+        String result;
+        StringBuilder sb = new StringBuilder();
 
         for (int i = 0; i < words.length; i++) {
             forms = new long[2];
             String word = words[i];
 
-            if ((words.length > i + 1) && (word.matches("^\\d+") && (words[i + 1].equals(".") || words[i + 1].equals(")")))) {  // нумерованный список
-                System.out.println("список");
-                result[i] = word;
+            if ((((i > 0) && (words[i - 1].equals("\n"))) || (i == 0))
+                    && ((words.length > i + 1) && (word.matches("\\d+") && (words[i + 1].equals(".") || words[i + 1].equals(")"))))) {  // нумерованный список
+                result = word;
+                sb.append(result);
 
-            } else if ((word.matches("^(\\+)?(?:[0-9] ?){6,14}[0-9]$"))) {  // номера телефонов (пока не всех)
-                result[i] = word;
+            } else if ((word.matches("^(\\+)?(?:[0-9] ?){6,14}[0-9]$"))) {  // номера телефонов (пока не все)
+                result = word;
+                sb.append(result);
 
             } else if ((words.length > i + 1) && (words[i + 1].matches("(,\\d+)+"))) {  // дробные числа через запятую: 34,9; 1341,0021
                 i++;
@@ -46,11 +47,13 @@ public class NumeralsConverter {
                 }
                 forms[1] = 8;
                 if (word.contains(",") && (words.length > i + 2) && (words[i + 2].matches("(руб[а-я]*)|(дол[а-я]*)|(евр[а-я]*)"))) {
-                    result[i] = convertFractionalNumberToWords(Double.parseDouble(word.replace(",", ".")), forms, words[i + 2]);
+                    result = convertFractionalNumberToWords(Double.parseDouble(word.replace(",", ".")), forms, words[i + 2]);
                     words[i + 1] = words[i + 2] = "";
                 } else {
-                    result[i] = convertFractionalNumberToWords(Double.parseDouble(word.replace(",", ".")), forms);
+                    result = convertFractionalNumberToWords(Double.parseDouble(word.replace(",", ".")), forms);
                 }
+
+                changeFirstLetter(result, sb);
 
             } else if ((words.length > i + 1) && (words[i + 1].matches("/\\d+"))) {  // дробные числа через слэш: 3/6, 929/2913
                 i++;
@@ -60,7 +63,8 @@ public class NumeralsConverter {
                     forms = getForms(words, i, (int) number % 10 == 1);
                 }
                 forms[1] = 8;
-                result[i] = convertFractionalNumberToWords(number, forms);
+                result = convertFractionalNumberToWords(number, forms);
+                changeFirstLetter(result, sb);
 
             } else if (word.matches("\\d+")) {  // обычные числа: 6, 9992, 949913; числа с делением тысяч точками: 23.231.865, 5.246; числа с делением тысяч пробелами: 23 231 865, 5 246
                 StringBuilder number = new StringBuilder(word);
@@ -89,31 +93,38 @@ public class NumeralsConverter {
                         forms = getForms(words, i, Integer.parseInt(word) % 10 == 1);
                     }
                 }
-                result[i] = convertNumberToWords(Integer.parseInt(number.toString().replaceAll("[ .]", "")), forms);
+
+                result = convertNumberToWords(Integer.parseInt(number.toString().replaceAll("[ .]", "")), forms);
+                changeFirstLetter(result, sb);
 
             } else if (word.matches("\\d+-((?:[тм]и)|(?:[её]м))")) {  // числа с наращениями: 5-ти, 4-ем
                 word = word.replace("ем", "ём");
-                result[i] = convertNumberToWords(Integer.parseInt(word.substring(0, word.indexOf("-"))), forms, word.substring(word.indexOf("-") + 1));
+                result = convertNumberToWords(Integer.parseInt(word.substring(0, word.indexOf("-"))), forms, word.substring(word.indexOf("-") + 1));
+                changeFirstLetter(result, sb);
 
-            } else if (word.matches("[вВ](о)*-(\\d)+")) {
-                result[i] = convertEnumToWords(word);
+            } else if (word.matches("[вВ](о)*-(\\d)+")) {  // перечисления: во-1, в-23
+                result = convertEnumToWords(word);
+                changeFirstLetter(result, sb);
 
             } else if (word.matches("(\\d)+(-)*([ыо]?й|[ыо]?м|о?е|а?я|ы?х|у?ю|го)")) {  // числа с наращениями: 1980-м, 16-е, 4-ом, 21-х, 5-й, 5й
-                result[i] = convertOrdinalToWords(word);
+                result = convertOrdinalToWords(word);
+                changeFirstLetter(result, sb);
 
             } else {
-                result[i] = word;
+                sb.append(word);
             }
         }
 
-        StringBuilder finalText = new StringBuilder();
-        for (String s : result) {
-            if (s != null) {
-                finalText.append(s);
-            }
-        }
+        return sb.toString();
+    }
 
-        return finalText.toString();
+    private void changeFirstLetter(String string, StringBuilder sb) {
+        if (string.length() > 0 && (sb.charAt(sb.length() - 1) == '\n'
+                || ((sb.length() > 1) && (sb.substring(sb.length() - 1).matches("[!.?]"))))) {
+            sb.append(string.substring(0, 1).toUpperCase()).append(string.substring(1));
+        } else {
+            sb.append(string);
+        }
     }
 
     public long[] getForms(String[] words, int i, boolean single) {

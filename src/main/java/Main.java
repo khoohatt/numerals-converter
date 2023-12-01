@@ -19,6 +19,7 @@ public class Main {
 Во-2, в-20, в-21, в-19, в-97, в-11...
 4-ём или 4-ем стенам, в 1945-м, около 2007-го
 деньги: 3,4 рубля, а еще 5792,34 дол. или 9,3345 долларов; 62873,2952 руб, 4,2 руб.
+мне 0 лет, у меня 0 рублей...
 */
 
     public static void main(String[] args) {
@@ -40,7 +41,7 @@ public class Main {
             input = sb.toString().trim();
 
             if (!input.equals("")) {
-                System.out.print("результат: " + nc.replaceNumber(input) + "\n\n");
+                System.out.print("\n\nрезультат: " + nc.replaceNumber(input) + "\n\n");
                 sb.setLength(0);
                 input = " ";
             }

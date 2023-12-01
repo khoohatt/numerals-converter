@@ -31,7 +31,7 @@ public class Var5 {
     // цифры перед тысячами: 2 334 232 рубля, 666 666 666 рублей, "2" в деньгах, склонение в дробях,
     // сложить все в отдельный класс
 
-    public static void main(String[] args) {
+/*    public static void main(String[] args) {
         String input = " ";
         StringBuilder sb = new StringBuilder();
 
@@ -52,7 +52,7 @@ public class Var5 {
                 input = " ";
             }
         }
-    }
+    }*/
 
     public static String replaceNumber(String text) {
         long[] forms;  // падеж, род

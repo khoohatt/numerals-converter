@@ -24,7 +24,7 @@ public class NumeralsConverter {
                 result = word;
                 sb.append(result);
 
-            } else if ((word.matches("^(\\+)?(?:[0-9] ?){6,14}[0-9]$"))) {  // номера телефонов (пока не все)
+            } else if ((word.matches("(8|\\+7|7)[0-9]{7,10}"))) {  // номера телефонов (пока не все)
                 result = word;
                 sb.append(result);
 
@@ -66,7 +66,7 @@ public class NumeralsConverter {
                 result = convertFractionalNumberToWords(number, forms);
                 changeFirstLetter(result, sb);
 
-            } else if (word.matches("\\d+")) {  // обычные числа: 6, 9992, 949913; числа с делением тысяч точками: 23.231.865, 5.246; числа с делением тысяч пробелами: 23 231 865, 5 246
+            } else if (word.matches("\\d{1,9}")) {  // обычные числа: 6, 9992, 949913; числа с делением тысяч точками: 23.231.865, 5.246; числа с делением тысяч пробелами: 23 231 865, 5 246
                 StringBuilder number = new StringBuilder(word);
 
                 if (words.length > i + 1) {
@@ -119,8 +119,8 @@ public class NumeralsConverter {
     }
 
     private void changeFirstLetter(String string, StringBuilder sb) {
-        if (sb.length() > 0 && (sb.charAt(sb.length() - 1) == '\n'
-                || ((sb.length() > 1) && (sb.substring(sb.length() - 1).matches("[!.?]"))))) {
+        if ((sb.length() > 0 && (sb.charAt(sb.length() - 1) == '\n')
+                || ((sb.length() > 1) && (sb.substring(sb.length() - 1).matches("[!.?]")))) || (sb.length() == 0)) {
             sb.append(string.substring(0, 1).toUpperCase()).append(string.substring(1));
         } else {
             sb.append(string);
@@ -155,7 +155,7 @@ public class NumeralsConverter {
         return forms;
     }
 
-    public String convertNumberToWords(int num, long[] forms, String... buildup) {  // ноль добавить
+    public String convertNumberToWords(int num, long[] forms, String... buildup) {
         String[] ones = {"ноль", "один", "два", "три", "четыре", "пять", "шесть", "семь", "восемь", "девять", "десять", "одиннадцать", "двенадцать", "тринадцать", "четырнадцать", "пятнадцать", "шестнадцать", "семнадцать", "восемнадцать", "девятнадцать"};
         String[] tens = {"", "", "двадцать", "тридцать", "сорок", "пятьдесят", "шестьдесят", "семьдесят", "восемьдесят", "девяносто"};
         String[] hundreds = {"", "сто", "двести", "триста", "четыреста", "пятьсот", "шестьсот", "семьсот", "восемьсот", "девятьсот"};
@@ -175,7 +175,7 @@ public class NumeralsConverter {
 
         if (num / 1000 > 0) {
             result.append(convertNumberToWords(num / 1000, new long[]{forms[0] != 0 ? forms[0] : 512, 8})).append(" ").append(getWordForms(num / 1000, thousands, forms[0])).append(" ");
-            num = num % 1000;  // getWordForms(num / 1000, thousands, forms[1])  // thousands[(num / 1000) % 10])
+            num = num % 1000;
         }
 
         if (num / 100 > 0) {
@@ -509,10 +509,6 @@ public class NumeralsConverter {
         } else {
             param = MorfologyParameters.TypeOfSpeech.NUMERAL;
         }
-
-//        if (forms[0] == 128) {
-//            forms[0] = 0;
-//        }
 
         if (forms[0] != 0) {
             JMorfSdk jMorfSdk = JMorfSdkFactory.loadFullLibrary();

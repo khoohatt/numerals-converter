@@ -24,7 +24,7 @@ public class NumeralsConverter {
                 result = word;
                 sb.append(result);
 
-            } else if ((word.matches("(8|\\+7|7)[0-9]{7,10}"))) {  // номера телефонов (пока не все)
+            } else if ((word.matches("(8|\\+7|7)[0-9]{7,10}"))) {  // номера телефонов
                 result = word;
                 sb.append(result);
 
@@ -141,12 +141,12 @@ public class NumeralsConverter {
                     System.out.println("существительное: " + form);
                     forms[0] = form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER);
                     forms[1] = form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Gender.class);
-                    if (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.NOMINATIVE) {
-                        break;
-                    } else if ((form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.ACCUSATIVE) ||
-                            (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.ACCUSATIVE2)) {
-                        break;
+                    if (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.NOMINATIVE
+                        || form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.ACCUSATIVE ||
+                            form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.ACCUSATIVE2) {
+                        return forms;
                     }
+                    return forms;
                 }
             }
             ++i;
@@ -524,11 +524,9 @@ public class NumeralsConverter {
                     if ((form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == forms[0] && form.getMorphCharacteristics() != 514)
 //                            || (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == 128 && form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == 512)
                     ) {
-                        System.out.println(form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) + " " + forms[0]);
-                        System.out.println(form.getMorphCharacteristics());
                         if ((form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Gender.class) == 0)
-                                || (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Gender.class) == forms[1])
-                                || (s.equals("ноль"))) {
+                            || (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Gender.class) == forms[1])
+                            || (s.equals("ноль"))) {
                             System.out.println("число (form[0] != 0): " + form);
                             return form.getMyString();
                         }

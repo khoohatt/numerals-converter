@@ -1,3 +1,13 @@
+import ru.textanalysis.tawt.gama.parser.GamaParserDefault;
+import ru.textanalysis.tawt.graphematic.parser.exception.NotParserTextException;
+import ru.textanalysis.tawt.jmorfsdk.JMorfSdk;
+import ru.textanalysis.tawt.jmorfsdk.JMorfSdkFactory;
+import ru.textanalysis.tawt.ms.grammeme.MorfologyParameters;
+import ru.textanalysis.tawt.ms.model.jmorfsdk.Form;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Scanner;
 
 public class Main {
@@ -9,7 +19,7 @@ public class Main {
 1. Чтобы обойти Антарктиду, ледоколу понадобилось не больше 62 суток.
 как-то 5-ти раз-таки, около 11-ти, 35-й час или 45й год
 2) примерно 34,8 млн.
-3/4, 3,2, 5/2, 3.095 часов, 2 тыс. кораблей
+3/4, 3,2, 5/2, 3.095 часов, 5 тыс. кораблей
 23 455 235 кошкам
 1. Человек делает за день около 20 тысяч шагов, за год – до 7 миллионов, а за 70 лет – почти 500 миллионов
 шагов. Это значит, что за всю свою жизнь человек мог бы 9 раз обойти земной шар по экватору или
@@ -29,6 +39,26 @@ public class Main {
         String input = " ";
         StringBuilder sb = new StringBuilder();
 
+        /*JMorfSdk jMorfSdk = JMorfSdkFactory.loadFullLibrary();
+        GamaParserDefault gamaParserDefault = new GamaParserDefault();
+        gamaParserDefault.init();*/
+
+//        List<List<String>> actual = gamaParserDefault.getParserSentence("Человек делает за день около 20 тысяч шагов, за год – до 7 миллионов, а за 70 лет – почти 500 миллионов");
+
+        /*for (List<String> list : actual) {
+            for (String string : list) {
+                System.out.println(string);
+            }
+        }*/
+
+
+        /*for (Form form : jMorfSdk.getOmoForms(".")) {
+            System.out.println("слово: " + form);
+            if (form.getTypeOfSpeech() == MorfologyParameters.TypeOfSpeech.PUNCTUATION) {
+                System.out.println(form.getTypeOfSpeech() + " знак");
+            }
+        }*/
+
         NumeralsConverter nc = new NumeralsConverter();
 
         while (!input.equals("")) {
@@ -44,10 +74,26 @@ public class Main {
             input = sb.toString().trim();
 
             if (!input.equals("")) {
-                System.out.print("\n\nрезультат: " + nc.replaceNumber(input) + "\n\n");
+                List<List<String>> parsedText = parserSentenceWithPunctuation(input);
+                System.out.print("\n\nрезультат: " + nc.replaceNumber(parsedText) + "\n\n");
                 sb.setLength(0);
                 input = " ";
             }
         }
+    }
+
+    public static List<List<String>> parserSentenceWithPunctuation(String sentence) throws NotParserTextException {
+        List<List<String>> sentenceList = new LinkedList<>();
+
+        for (String basicsPhase : sentence.split("((?=(\n))|((?<=[,.!?–;:])(?!(\\p{N})))|((?=[,.!?–;:\n])(?<!(\\p{N}))))")) {
+            System.out.println(basicsPhase);
+            sentenceList.add(parserPhraseWithPunctuation(basicsPhase));
+        }
+
+        return sentenceList;
+    }
+
+    public static List<String> parserPhraseWithPunctuation(String basicsPhase) throws NotParserTextException {
+        return new LinkedList<>(Arrays.asList(basicsPhase.split("(?<=(\n))|((?<![\\p{L}\\p{N}_-])|(?![\\p{L}\\p{N}_-]))((?<![,./])|(?!(\\p{N})))")));
     }
 }

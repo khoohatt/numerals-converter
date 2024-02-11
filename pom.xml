@@ -38,7 +38,7 @@
 
     <groupId>ru.textanalysis.tawt</groupId>
     <artifactId>tawt-jitpack-pom</artifactId>
-    <version>3.0.0</version>
+    <version>3.2.0</version>
     <packaging>pom</packaging>
 
     <properties>
@@ -149,10 +149,12 @@
         <dependency>
             <groupId>ru.textanalysis.tawt</groupId>
             <artifactId>morphological-structures</artifactId>
+<!--            <version>45fbf62797</version>-->
         </dependency>
         <dependency>
             <groupId>ru.textanalysis.tawt</groupId>
             <artifactId>morphological-dictionary</artifactId>
+<!--            <version>45fbf62797</version>-->
         </dependency>
     </dependencies>
 

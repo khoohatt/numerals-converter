@@ -139,30 +139,60 @@ public class NumeralsConverter {
 
     public long[] getForms(String[] words, int i, boolean single) {
         JMorfSdk jMorfSdk = JMorfSdkFactory.loadFullLibrary();
-        long[] forms = new long[2];
+        long[] forms = new long[]{0,0};
         ++i;
 
-        while (i < words.length && !words[i].matches("[.,;:!?]|лет|метров|дней|месяцев|рублей|долларов")) {
-            for (Form form : jMorfSdk.getOmoForms(words[i])) {
-                System.out.println("слово: " + form);
+        if (i > 3) {
+            forms = getFormsWithPreposition(words, i);
+        }
 
-                if (form.getTypeOfSpeech() == MorfologyParameters.TypeOfSpeech.NOUN
-                        && (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Numbers.class) == MorfologyParameters.Numbers.PLURAL ^ single)) {
-                    System.out.println("существительное: " + form);
-                    forms[0] = form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER);
-                    forms[1] = form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Gender.class);
-                    if (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.NOMINATIVE
-                        || form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.ACCUSATIVE ||
-                            form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.ACCUSATIVE2) {
-                        return forms;
+        if (forms[0] == 0) {
+            while (i < words.length && !words[i].matches("[.,;:!?]|лет|метров|дней|месяцев|рублей|долларов")) {
+                List<Long> list = new LinkedList<>();
+                for (Form form : jMorfSdk.getOmoForms(words[i])) {
+                    System.out.println("слово: " + form);
+
+                    if (form.getTypeOfSpeech() == MorfologyParameters.TypeOfSpeech.NOUN
+                            && (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Numbers.class) == MorfologyParameters.Numbers.PLURAL ^ single)) {
+                        System.out.println("существительное: " + form);
+                        forms[0] = form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER);
+                        forms[1] = form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Gender.class);
+                        if (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.NOMINATIVE
+                                || form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.ACCUSATIVE ||
+                                form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.ACCUSATIVE2) {
+                            return forms;
+                        }
+                        list.add(forms[0]);
                     }
+                }
+                if (!list.isEmpty()) {
                     return forms;
                 }
+                ++i;
             }
-            ++i;
         }
         //        jMorfSdk.finish();
         return forms;
+    }
+
+    public long[] getFormsWithPreposition(String[] words, int i) {
+        if (words[i - 3].matches("к|по|благодаря|вопреки|согласно")) {
+            System.out.println("дательный");
+            return new long[]{192L, 0};
+        } else if (words[i - 3].matches("с|у|от|до|из|без|для|вокруг|около|возле|кроме")) {
+            System.out.println("родительный");
+            return new long[]{128L, 0};
+        } if (words[i - 3].matches("под|за|про|через|в|на|во")) {
+            System.out.println("винительный");
+            return new long[]{512L, 0};
+        } else if (words[i - 3].matches("с|со|за|над|под|между|перед")) {
+            System.out.println("творительный");
+            return new long[]{320L, 0};
+        } else if (words[i - 3].matches("в|о|об|на|при|по")) {
+            System.out.println("предложный");
+            return new long[]{576L, 0};
+        }
+        return new long[]{0, 0};
     }
 
     public String convertNumberToWords(int num, long[] forms, String... buildup) {

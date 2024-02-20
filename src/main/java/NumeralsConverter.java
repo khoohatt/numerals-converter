@@ -1,127 +1,140 @@
-import ru.textanalysis.tawt.graphematic.parser.exception.NotParserTextException;
 import ru.textanalysis.tawt.jmorfsdk.JMorfSdk;
 import ru.textanalysis.tawt.jmorfsdk.JMorfSdkFactory;
 import ru.textanalysis.tawt.ms.grammeme.MorfologyParameters;
 import ru.textanalysis.tawt.ms.model.jmorfsdk.Form;
 
 import java.text.DecimalFormat;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
 public class NumeralsConverter {
 
-    public NumeralsConverter() { }
+    public NumeralsConverter() {
+    }
 
-
-    public String replaceNumber(List<List<String>> parsedText) {
+    public String replaceNumber(List<String> wordsList) {
         long[] forms;  // падеж, род
 
         StringBuilder sb = new StringBuilder();
 
-        for (List<String> wordsList : parsedText) {
-            String[] words = new String[wordsList.size()];
-            wordsList.toArray(words);
-            String result;
+        String[] words = new String[wordsList.size()];
+        wordsList.toArray(words);
+        StringBuilder result;
 
-            for (int i = 0; i < words.length; i++) {
-                forms = new long[2];
-                String word = words[i];
+        for (int i = 0; i < words.length; i++) {
+            forms = new long[2];
+            String word = words[i];
 
-                if ((((i > 0) && (words[i - 1].equals("\n"))) || (i == 0))
-                        && ((words.length > i + 1) && (word.matches("\\d+") && (words[i + 1].equals(".") || words[i + 1].equals(")"))))) {  // нумерованный список
-                    result = word;
-                    sb.append(result);
+            if ((((i > 0) && (words[i - 1].equals("\n"))) || (i == 0))
+                    && ((words.length > i + 1) && (word.matches("\\d+") && (words[i + 1].equals(".") || words[i + 1].equals(")"))))) {  // нумерованный список
+                result = new StringBuilder(word);
+                sb.append(result);
 
-                } else if ((word.matches("(8|\\+7|7)[0-9]{7,10}"))) {  // номера телефонов
-                    result = word;
-                    sb.append(result);
+            } else if ((word.matches("(8|\\+7|7)[0-9]{7,10}"))) {  // номера телефонов
+                result = new StringBuilder(word);
+                sb.append(result);
 
-                } else if ((words.length > i + 1) && (words[i + 1].matches("(,\\d+)+"))) {  // дробные числа через запятую: 34,9; 1341,0021 и валюта: 30,5 рублей, 43,23 доллара
-                    i++;
-                    word += words[i];
+            } else if ((words.length > i + 1) && (words[i + 1].matches("(,\\d+)+"))) {  // дробные числа через запятую: 34,9; 1341,0021 и валюта: 30,5 рублей, 43,23 доллара
+                i++;
+                word += words[i];
+                while ((words.length > i + 2) && (words[i + 2].matches("(млн|тыс)"))) {
+                    if (words[i + 2].equals("млн")) {
+                        word = String.valueOf(Double.parseDouble(word.replace(",", ".")) * 1000000);
+                    } else if (words[i + 2].equals("тыс")) {
+                        word = String.valueOf(Double.parseDouble(word.replace(",", ".")) * 1000);
+                    }
+                    i += 2;
+                    if (words.length > i + 3 && (words[i + 1].equals(".") && !words[i + 2].equals("\n"))) {
+                        i++;
+                    }
+                }
+                if (words.length > i + 2) {
+                    forms = getForms(words, i, (int) Double.parseDouble(word.replace(",", ".")) % 10 == 1);
+                }
+                forms[1] = 8;
+                if (word.contains(",") && (words.length > i + 2) && (words[i + 2].matches("(руб[а-я]*)|(дол[а-я]*)|(евр[а-я]*)"))) {
+                    result = new StringBuilder(convertFractionalNumberToWords(Double.parseDouble(word.replace(",", ".")), forms, words[i + 2]));
+                    words[i + 1] = words[i + 2] = "";
+                } else {
+                    result = new StringBuilder(convertFractionalNumberToWords(Double.parseDouble(word.replace(",", ".")), forms));
+                }
+
+                changeFirstLetter(result.toString(), sb);
+
+            } else if ((words.length > i + 1) && (words[i + 1].matches("/\\d+"))) {  // дробные числа через слэш: 3/6, 929/2913
+                i++;
+                word += words[i];
+                double number = Double.parseDouble(word.split("/")[0]) / Double.parseDouble(word.split("/")[1]);
+                if (words.length > i + 2) {
+                    forms = getForms(words, i, (int) number % 10 == 1);
+                }
+                forms[1] = 8;
+                result = new StringBuilder(convertFractionalNumberToWords(number, forms));
+                changeFirstLetter(result.toString(), sb);
+
+            } else if (word.matches("\\d{1,9}")) {  // обычные числа: 6, 9992, 949913; числа с делением тысяч точками: 23.231.865, 5.246; числа с делением тысяч пробелами: 23 231 865, 5 246
+                StringBuilder number = new StringBuilder(word);
+
+                if (words.length > i + 1) {
+                    while ((words.length > i + 1) && (words[i + 1].matches("(\\.\\d{3})+"))) {
+                        i++;
+                        number.append(words[i]);
+                    }
+                    while ((words.length > i + 2) && (words[i + 1].matches("(\\s)") && (words[i + 2].matches("\\d{3}")))) {
+                        i += 2;
+                        number.append(words[i]);
+                    }
                     while ((words.length > i + 2) && (words[i + 2].matches("(млн|тыс)"))) {
                         if (words[i + 2].equals("млн")) {
-                            word = String.valueOf(Double.parseDouble(word.replace(",", ".")) * 1000000);
+                            number.append("000000");
                         } else if (words[i + 2].equals("тыс")) {
-                            word = String.valueOf(Double.parseDouble(word.replace(",", ".")) * 1000);
+                            number.append("000");
                         }
                         i += 2;
-                        if (words.length > i + 3 && (words[i + 1].equals(".") && !words[i + 2].equals("\n"))) {
+                        if ((words.length > i + 3) && (words[i + 1].equals(".") && !words[i + 2].equals("\n"))) {
                             i++;
                         }
                     }
-                    if (words.length > i + 2) {
-                        forms = getForms(words, i, (int) Double.parseDouble(word.replace(",", ".")) % 10 == 1);
-                    }
-                    forms[1] = 8;
-                    if (word.contains(",") && (words.length > i + 2) && (words[i + 2].matches("(руб[а-я]*)|(дол[а-я]*)|(евр[а-я]*)"))) {
-                        result = convertFractionalNumberToWords(Double.parseDouble(word.replace(",", ".")), forms, words[i + 2]);
-                        words[i + 1] = words[i + 2] = "";
-                    } else {
-                        result = convertFractionalNumberToWords(Double.parseDouble(word.replace(",", ".")), forms);
-                    }
-
-                    changeFirstLetter(result, sb);
-
-                } else if ((words.length > i + 1) && (words[i + 1].matches("/\\d+"))) {  // дробные числа через слэш: 3/6, 929/2913
-                    i++;
-                    word += words[i];
-                    double number = Double.parseDouble(word.split("/")[0]) / Double.parseDouble(word.split("/")[1]);
-                    if (words.length > i + 2) {
-                        forms = getForms(words, i, (int) number % 10 == 1);
-                    }
-                    forms[1] = 8;
-                    result = convertFractionalNumberToWords(number, forms);
-                    changeFirstLetter(result, sb);
-
-                } else if (word.matches("\\d{1,9}")) {  // обычные числа: 6, 9992, 949913; числа с делением тысяч точками: 23.231.865, 5.246; числа с делением тысяч пробелами: 23 231 865, 5 246
-                    StringBuilder number = new StringBuilder(word);
-
-                    if (words.length > i + 1) {
-                        while ((words.length > i + 1) && (words[i + 1].matches("(\\.\\d{3})+"))) {
-                            i++;
-                            number.append(words[i]);
-                        }
-                        while ((words.length > i + 2) && (words[i + 1].matches("(\\s)") && (words[i + 2].matches("\\d{3}")))) {
-                            i += 2;
-                            number.append(words[i]);
-                        }
-                        while ((words.length > i + 2) && (words[i + 2].matches("(млн|тыс)"))) {
-                            if (words[i + 2].equals("млн")) {
-                                number.append("000000");
-                            } else if (words[i + 2].equals("тыс")) {
-                                number.append("000");
-                            }
-                            i += 2;
-                            if ((words.length > i + 3) && (words[i + 1].equals(".") && !words[i + 2].equals("\n"))) {
-                                i++;
-                            }
-                        }
-                        if (words.length > i + 2) {
-                            forms = getForms(words, i, Integer.parseInt(word) % 10 == 1);
-                        }
-                    }
-
-                    result = convertNumberToWords(Integer.parseInt(number.toString().replaceAll("[ .]", "")), forms);
-                    changeFirstLetter(result, sb);
-
-                } else if (word.matches("\\d+-((?:[тм]и)|(?:[её]м))")) {  // числа с наращениями: 5-ти, 4-ем
-                    word = word.replace("ем", "ём");
-                    result = convertNumberToWords(Integer.parseInt(word.substring(0, word.indexOf("-"))), forms, word.substring(word.indexOf("-") + 1));
-                    changeFirstLetter(result, sb);
-
-                } else if (word.matches("[вВ](о)*-(\\d)+")) {  // перечисления: во-1, в-23
-                    result = convertEnumToWords(word);
-                    changeFirstLetter(result, sb);
-
-                } else if (word.matches("(\\d)+(-)*([ыо]?й|[ыо]?м|о?е|а?я|ы?х|у?ю|го)")) {  // числа с наращениями: 1980-м, 16-е, 4-ом, 21-х, 5-й, 5й
-                    result = convertOrdinalToWords(word);
-                    changeFirstLetter(result, sb);
-
-                } else {
-                    sb.append(word);
                 }
+
+                if ((words.length > i + 2) && (words[i + 2].matches("год|году|годах|годам|годы|года|годов")
+                        || words[i + 2].matches("(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)"))) {
+                    forms = getForms(words, i, !words[i + 2].matches("годам|годах|годов|годы"));
+                    String[] date = convertOrdinalToWords(word).split("(?<=( ))");
+                    result = new StringBuilder();
+                    for (int j = 0; j < date.length - 1; j++) {
+                        result.append(date[j]);
+                    }
+                    if (words[i + 2].equals("года")) {
+                        forms[0] = 128L;
+                    }
+                    result.append(convertDateToWords(date[date.length - 1], forms, !words[i + 2].matches("годам|годах|годов|годы")));
+                } else {
+                    if (words.length > i + 2) {
+                        forms = getForms(words, i, Integer.parseInt(word) % 10 == 1);
+                    } else if (i > 1) {
+                        forms = getFormsWithPreposition(words, i + 1);
+                    }
+                    result = new StringBuilder(convertNumberToWords(Integer.parseInt(number.toString().replaceAll("[ .]", "")), forms));
+                }
+
+                changeFirstLetter(result.toString(), sb);
+
+            } else if (word.matches("\\d+-((?:[тм]и)|(?:[её]м))")) {  // числа с наращениями: 5-ти, 4-ем
+                word = word.replace("ем", "ём");
+                result = new StringBuilder(convertNumberToWords(Integer.parseInt(word.substring(0, word.indexOf("-"))), forms, word.substring(word.indexOf("-") + 1)));
+                changeFirstLetter(result.toString(), sb);
+
+            } else if (word.matches("[вВ](о)*-(\\d)+")) {  // перечисления: во-1, в-23
+                result = new StringBuilder(convertEnumToWords(word));
+                changeFirstLetter(result.toString(), sb);
+
+            } else if (word.matches("(\\d)+(-)*([ыо]?й|[ыо]?м|о?е|а?я|ы?х|у?ю|го)")) {  // числа с наращениями: 1980-м, 16-е, 4-ом, 21-х, 5-й, 5й
+                result = new StringBuilder(convertOrdinalToWords(word));
+                changeFirstLetter(result.toString(), sb);
+
+            } else {
+                sb.append(word);
             }
         }
 
@@ -139,50 +152,55 @@ public class NumeralsConverter {
 
     public long[] getForms(String[] words, int i, boolean single) {
         JMorfSdk jMorfSdk = JMorfSdkFactory.loadFullLibrary();
-        long[] forms = new long[]{0,0};
+        long[] forms = new long[]{0, 0};
         ++i;
 
-        if (i > 3) {
+        if (i > 2) {
             forms = getFormsWithPreposition(words, i);
         }
 
-        if (forms[0] == 0) {
-            while (i < words.length && !words[i].matches("[.,;:!?]|лет|метров|дней|месяцев|рублей|долларов")) {
-                List<Long> list = new LinkedList<>();
-                for (Form form : jMorfSdk.getOmoForms(words[i])) {
-                    System.out.println("слово: " + form);
-
-                    if (form.getTypeOfSpeech() == MorfologyParameters.TypeOfSpeech.NOUN
-                            && (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Numbers.class) == MorfologyParameters.Numbers.PLURAL ^ single)) {
-                        System.out.println("существительное: " + form);
-                        forms[0] = form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER);
-                        forms[1] = form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Gender.class);
-                        if (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.NOMINATIVE
-                                || form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.ACCUSATIVE ||
-                                form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.ACCUSATIVE2) {
-                            return forms;
-                        }
-                        list.add(forms[0]);
+        while (i < words.length && !words[i].matches("[.,;:!?]|лет|метров|дней|месяцев|рублей|долларов")) {
+            List<Long> list = new LinkedList<>();
+            for (Form form : jMorfSdk.getOmoForms(words[i])) {
+                if (form.getTypeOfSpeech() == MorfologyParameters.TypeOfSpeech.NOUN
+                        && (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Numbers.class) == MorfologyParameters.Numbers.PLURAL ^ single)
+                ) {
+                    System.out.println("существительное: " + form + " " + form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER));
+                    forms[1] = form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Gender.class);
+                    if (forms[0] == 0 && (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) != MorfologyParameters.Case.GENITIVE1)) {
+//                            if (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.NOMINATIVE
+//                                    || form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.ACCUSATIVE ||
+//                                    form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.ACCUSATIVE2) {
+                        list.add(form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER));
+//                            }
                     }
                 }
-                if (!list.isEmpty()) {
-                    return forms;
-                }
-                ++i;
             }
+            if (!list.isEmpty()) {
+                if (list.contains(64L)) {
+                    forms[0] = 64L;
+                } else {
+                    forms[0] = list.get(0);
+                }
+                return forms;
+            }
+            ++i;
         }
         //        jMorfSdk.finish();
         return forms;
     }
 
     public long[] getFormsWithPreposition(String[] words, int i) {
-        if (words[i - 3].matches("к|по|благодаря|вопреки|согласно")) {
+        if (words[i - 3].matches("по")) {
+            System.out.println("именительный для числительного?");
+            return new long[]{64L, 0};
+        } else if (words[i - 3].matches("к|ко|по|благодаря|вопреки|согласно")) {
             System.out.println("дательный");
             return new long[]{192L, 0};
         } else if (words[i - 3].matches("с|у|от|до|из|без|для|вокруг|около|возле|кроме")) {
             System.out.println("родительный");
             return new long[]{128L, 0};
-        } if (words[i - 3].matches("под|за|про|через|в|на|во")) {
+        } else if (words[i - 3].matches("под|за|про|через|в|на|во")) {
             System.out.println("винительный");
             return new long[]{512L, 0};
         } else if (words[i - 3].matches("с|со|за|над|под|между|перед")) {
@@ -250,6 +268,22 @@ public class NumeralsConverter {
         return result.toString().trim();
     }
 
+    public String convertDateToWords(String date, long[] forms, boolean isSingular) {
+        JMorfSdk jMorfSdk = JMorfSdkFactory.loadFullLibrary();
+
+        for (String s : jMorfSdk.getDerivativeFormLiterals(date, MorfologyParameters.TypeOfSpeech.ADJECTIVE_FULL)) {
+            for (Form form : jMorfSdk.getOmoForms(s)) {
+                if (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == forms[0]
+//                        && ((form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Numbers.IDENTIFIER) == MorfologyParameters.Numbers.SINGULAR) == isSingular)
+                ) {
+                    System.out.println("число (дата): " + form);
+                    return form.getMyString();
+                }
+            }
+        }
+        return "";
+    }
+
     public String convertEnumToWords(String enumer) {
         String[] onesOrdinal = {"нулевых", "первых", "вторых", "третьих", "четвертых", "пятых", "шестых", "седьмых", "восьмых", "девятых", "десятых", "одиннадцатых", "двенадцатых", "тринадцатых", "четырнадцатых", "пятнадцатых", "шестнадцатых", "семнадцатых", "восемнадцатых", "девятнадцатых"};
         String[] tensOrdinal = {"", "", "двадцатых", "тридцатых", "сороковых", "пятидесятых", "шестидесятых", "семидесятых", "восьмидесятых", "девяностых"};
@@ -297,7 +331,15 @@ public class NumeralsConverter {
                 {"девятнадцатый", "девятнадцатого", "девятнадцатому", "девятнадцатым", "девятнадцатом", "девятнадцатая", "девятнадцатой", "девятнадцатую", "девятнадцатое", "девятнадцатые", "девятнадцатых", "девятнадцатым", "девятнадцатыми"}};
 
         String[][] tensOrdinal = {{}, {"десятый", "десятого", "десятому", "десятом", "десятым", "десятая", "десятой", "десятую", "десятое", "десятые", "десятых", "десятым", "десятыми"},
-                {"двадцатый", "двадцатого", "двадцатому", "двадцатом", "двадцатым", "двадцатая", "двадцатой", "двадцатую", "двадцатое", "двадцатые", "двадцатых", "двадцатым", "двадцатыми"}};
+                {"двадцатый", "двадцатого", "двадцатому", "двадцатом", "двадцатым", "двадцатая", "двадцатой", "двадцатую", "двадцатое", "двадцатые", "двадцатых", "двадцатым", "двадцатыми"},
+                {"тридцатый", "тридцатого", "тридцатому", "тридцатом", "тридцатым", "тридцатая", "тридцатой", "тридцатую", "тридцатое", "тридцатые", "тридцатых", "тридцатым", "тридцатыми"},
+                {"сороковой", "сорокового", "сороковому", "сороковом", "сороковым", "сороковая", "сороковой", "сороковую", "сороковое", "сороковые", "сороковых", "сороковым", "сороковыми"},
+                {"пятидесятый", "пятидесятого", "пятидесятому", "пятидесятом", "пятидесятым", "пятидесятая", "пятидесятой", "пятидесятую", "пятидесятое", "пятидесятые", "пятидесятых", "пятидесятым", "пятидесятыми"},
+                {"шестидесятый", "шестидесятого", "шестидесятому", "шестидесятом", "шестидесятым", "шестидесятая", "шестидесятой", "шестидесятую", "шестидесятое", "шестидесятые", "шестидесятых", "шестидесятым", "шестидесятыми"},
+                {"семидесятый", "семидесятого", "семидесятому", "семидесятом", "семидесятым", "семидесятая", "семидесятой", "семидесятую", "семидесятое", "семидесятые", "семидесятых", "семидесятым", "семидесятыми"},
+                {"восьмидесятый", "восьмидесятого", "восьмидесятому", "восьмидесятом", "восьмидесятым", "восьмидесятая", "восьмидесятой", "восьмидесятую", "восьмидесятое", "восьмидесятые", "восьмидесятых", "восьмидесятым", "восьмидесятыми"},
+                {"девяностый", "девяностого", "девяностому", "девяностом", "девяностым", "девяностая", "девяностой", "девяностую", "девяностое", "девяностые", "девяностых", "девяностым", "девяностыми"},
+                {"сотый", "сотого", "сотому", "сотом", "сотым", "сотая", "сотой", "сотую", "сотое", "сотые", "сотых", "сотым", "сотыми"}};
 
         String[] result = new String[2];
         if (ordinal.contains("-")) {
@@ -363,7 +405,7 @@ public class NumeralsConverter {
         } else if (fractionalStr.length() > 1) {
             integerWords += " целых " + fractionalWords + " сотых";
         } else if (fractionalStr.length() == 1) {
-            integerWords += " целых " + fractionalWords + " десятых";
+            integerWords += " целые " + fractionalWords + " десятых";
 //           integerWords += " " + getFractionalForm("целых", forms) + " " + fractionalWords + " " + getFractionalForm("десятых", forms);
         }
 
@@ -464,11 +506,10 @@ public class NumeralsConverter {
         JMorfSdk jMorfSdk = JMorfSdkFactory.loadFullLibrary();
 
         for (String s : jMorfSdk.getDerivativeFormLiterals(noun, MorfologyParameters.TypeOfSpeech.NOUN)) {
-            System.out.println("форма: " + s);
             for (Form form : jMorfSdk.getOmoForms(s)) {
                 if (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == forms) {
                     if (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Numbers.IDENTIFIER) == MorfologyParameters.Numbers.PLURAL) {
-                        System.out.println("число (noun): " + form);
+                        System.out.println("число: " + form);
                         return form.getMyString();
                     }
                 }
@@ -482,6 +523,8 @@ public class NumeralsConverter {
 //        ЧАСТЬ РЕЧИ - [17, 17, 18, 18, 18]
 //        13:12:40.495 [main] DEBUG ru.textanalysis.tawt.jmorfsdk.JMorfSdkImpl - В словаре начальные формы для литерала: целых
 //        13:12:40.496 [main] DEBUG ru.textanalysis.tawt.jmorfsdk.JMorfSdkImpl - В словаре отсутствует производное слов, слова: целых с частью речи: 18
+//        11:16:32.507 [main] DEBUG ru.textanalysis.tawt.jmorfsdk.JMorfSdkImpl - В словаре начальные формы для литерала: целые
+//        11:16:32.509 [main] DEBUG ru.textanalysis.tawt.jmorfsdk.JMorfSdkImpl - В словаре отсутствует производное слов, слова: целые с частью речи: 17
 //        ЧАСТЬ РЕЧИ - [18, 18, 18]
 //        13:12:40.497 [main] DEBUG ru.textanalysis.tawt.jmorfsdk.JMorfSdkImpl - В словаре начальные формы для литерала: десятых
 //        13:12:40.497 [main] DEBUG ru.textanalysis.tawt.jmorfsdk.JMorfSdkImpl - В словаре отсутствует производное слов, слова: десятых с частью речи: 18
@@ -528,7 +571,6 @@ public class NumeralsConverter {
             JMorfSdk jMorfSdk = JMorfSdkFactory.loadFullLibrary();
             final String[] number = {""};
             for (String s : jMorfSdk.getDerivativeFormLiterals(result, MorfologyParameters.TypeOfSpeech.NOUN)) {
-                System.out.println("форма: " + s);
                 for (Form form : jMorfSdk.getOmoForms(s)) {
                     if ((form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == identifier)) {
                         System.out.println("порядок: " + form);
@@ -559,14 +601,13 @@ public class NumeralsConverter {
 //            интересная ситуация с "тысячей" и "миллионом": "тысяча" есть в библиотеке только как существительное, а "миллион" - только как числительное
 
             for (String s : jMorfSdk.getDerivativeFormLiterals(num, param)) {
-                System.out.println("форма числа: " + forms[0]);
                 for (Form form : jMorfSdk.getOmoForms(s)) {
                     if ((form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == forms[0] && form.getMorphCharacteristics() != 514)
 //                            || (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == 128 && form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == 512)
                     ) {
                         if ((form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Gender.class) == 0)
-                            || (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Gender.class) == forms[1])
-                            || (s.equals("ноль"))) {
+                                || (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Gender.class) == forms[1])
+                                || (s.equals("ноль"))) {
                             System.out.println("число (form[0] != 0): " + form);
                             return form.getMyString();
                         }
@@ -578,7 +619,6 @@ public class NumeralsConverter {
             JMorfSdk jMorfSdk = JMorfSdkFactory.loadFullLibrary();
 
             for (String s : jMorfSdk.getDerivativeFormLiterals(num, param)) {
-                System.out.println(s);
                 for (Form form : jMorfSdk.getOmoForms(s)) {
                     if (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.NOMINATIVE) {
                         if (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Gender.class) == forms[1]) {
@@ -603,7 +643,6 @@ public class NumeralsConverter {
         JMorfSdk jMorfSdk = JMorfSdkFactory.loadFullLibrary();
 
         for (String s : jMorfSdk.getDerivativeFormLiterals(num, MorfologyParameters.TypeOfSpeech.NUMERAL)) {
-            System.out.println(s);
             for (Form form : jMorfSdk.getOmoForms(s)) {
                 if (form.getMyString().substring(buildup.length()).endsWith(buildup)) {
                     System.out.println("число: " + form);
@@ -613,7 +652,6 @@ public class NumeralsConverter {
         }
 
         for (String s : jMorfSdk.getDerivativeFormLiterals(num, MorfologyParameters.TypeOfSpeech.COLLECTIVE_NUMERAL)) {  // без результата
-            System.out.println(s);
             for (Form form : jMorfSdk.getOmoForms(s)) {
                 if (form.getMyString().substring(buildup.length()).endsWith(buildup)) {
                     System.out.println("число: " + form);

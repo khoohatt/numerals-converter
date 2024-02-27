@@ -1,9 +1,12 @@
+import ru.textanalysis.tawt.graphematic.parser.exception.NotParserTextException;
 import ru.textanalysis.tawt.jmorfsdk.JMorfSdk;
 import ru.textanalysis.tawt.jmorfsdk.JMorfSdkFactory;
 import ru.textanalysis.tawt.ms.grammeme.MorfologyParameters;
 import ru.textanalysis.tawt.ms.model.jmorfsdk.Form;
 
 import java.text.DecimalFormat;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Scanner;
 
 public class Var5 {
@@ -31,8 +34,8 @@ public class Var5 {
     // цифры перед тысячами: 2 334 232 рубля, 666 666 666 рублей, "2" в деньгах, склонение в дробях,
     // сложить все в отдельный класс
 
-/*    public static void main(String[] args) {
-        String input = " ";
+    public static void main(String[] args) {
+        /*String input = " ";
         StringBuilder sb = new StringBuilder();
 
         while (!input.equals("")) {
@@ -51,112 +54,165 @@ public class Var5 {
                 sb.setLength(0);
                 input = " ";
             }
+        }*/
+
+        String input = " ";
+        StringBuilder sb = new StringBuilder();
+
+        while (!input.equals("")) {
+            Scanner scanner = new Scanner(System.in);
+            System.out.print("текст: ");
+
+            while (!input.equals("")) {
+                input = scanner.nextLine();
+                sb.append(input);
+                sb.append("\n");
+            }
+
+            input = sb.toString().trim();
+
+            if (!input.equals("")) {
+                System.out.print("\n\nрезультат: " + replaceNumber(input) + "\n\n");
+                sb.setLength(0);
+                input = " ";
+            }
         }
-    }*/
+    }
+
+    public static List<String[]> parserSentenceWithPunctuation(String sentence) throws NotParserTextException {
+        List<String[]> sentenceList = new LinkedList<>();
+
+        for (String basicsPhase : sentence.split("(((?<=[,.!?–;:])(?!(\\p{N})))|((?=[,.!?–;:])(?<!(\\p{N}))))")) {
+            basicsPhase = basicsPhase.trim();
+            if (!basicsPhase.isBlank()) {
+                try {
+                    System.out.println(basicsPhase);
+                    sentenceList.add(basicsPhase.split("[^а-яА-Я\\-0-9ёЁa-zA-Z,.–!?:;]"));
+                } catch (NotParserTextException ex) {
+//                    log.debug("Sentence = {}, exception: {}", sentence, ex.getMessage());
+                }
+            }
+        }
+
+        if (sentenceList.isEmpty()) {
+//            throw new NotParserTextException("Передана пустая строка");
+        }
+
+        return sentenceList;
+    }
+
+    public static String[] parserPhraseWithPunctuation(String basicsPhase) throws NotParserTextException {
+            String[] str = basicsPhase.split("[^а-яА-Я\\-0-9ёЁa-zA-Z,.–!?:;]");
+
+        return str;
+    }
 
     public static String replaceNumber(String text) {
         long[] forms;  // падеж, род
+        StringBuilder finalText = new StringBuilder();
 
-        String[] words = text.split("((?<![\\p{L}\\p{N}_-])|(?![\\p{L}\\p{N}_-]))((?<![,./])|(?!(\\p{N})))");  // (?=!(\\p{N}+[,.]\\p{N}+))  |((?<![.,])|(?![\\p{N}.,]))|((?<![\\p{N}.,])|(?![.,]))");  // (?<![\p{L}\p{N}_-])|(?![\p{L}\p{N}_-])|(?<=\d)[,.](?=\d)  text.split("(?<!\\d),(?!\\d)|(?<!-)\s+");  // text.split("(?<![\\p{L}\\p{N}_-])|(?![\\p{L}\\p{N}_-])");
-        String[] result = new String[words.length];
+//        String[] words = text.split("((?<![\\p{L}\\p{N}_-])|(?![\\p{L}\\p{N}_-]))((?<![,./])|(?!(\\p{N})))");  // (?=!(\\p{N}+[,.]\\p{N}+))  |((?<![.,])|(?![\\p{N}.,]))|((?<![\\p{N}.,])|(?![.,]))");  // (?<![\p{L}\p{N}_-])|(?![\p{L}\p{N}_-])|(?<=\d)[,.](?=\d)  text.split("(?<!\\d),(?!\\d)|(?<!-)\s+");  // text.split("(?<![\\p{L}\\p{N}_-])|(?![\\p{L}\\p{N}_-])");
+        List<String[]> parsedText = parserSentenceWithPunctuation(text);
+        for (String[] words : parsedText) {
+            String[] result = new String[words.length];
 
-        for (int i = 0; i < words.length; i++) {
-            forms = new long[2];
-            String word = words[i];
+            for (int i = 0; i < words.length; i++) {
+                forms = new long[2];
+                String word = words[i];
 
-            if ((words.length > i + 1) && (word.matches("^\\d+") && (words[i + 1].equals(".") || words[i + 1].equals(")")))) {  // нумерованный список
-                System.out.println("список");
-                result[i] = word;
+                if ((words.length > i + 1) && (word.matches("^\\d+") && (words[i + 1].equals(".") || words[i + 1].equals(")")))) {  // нумерованный список
+                    System.out.println("список");
+                    result[i] = word;
 
-            } else if ((word.matches("^(\\+)?(?:[0-9] ?){6,14}[0-9]$"))) {  // номера телефонов (пока не всех)
-                result[i] = word;
+                } else if ((word.matches("^(\\+)?(?:[0-9] ?){6,14}[0-9]$"))) {  // номера телефонов (пока не всех)
+                    result[i] = word;
 
-            } else if ((words.length > i + 1) && (words[i + 1].matches("(,\\d+)+"))) {  // дробные числа через запятую: 34,9; 1341,0021
-                i++;
-                word += words[i];
-                while ((words.length > i + 2) && (words[i + 2].matches("(млн|тыс)"))) {
-                    if (words[i + 2].equals("млн")) {
-                        word = String.valueOf(Double.parseDouble(word.replace(",", ".")) * 1000000);
-                    } else if (words[i + 2].equals("тыс")) {
-                        word = String.valueOf(Double.parseDouble(word.replace(",", ".")) * 1000);
-                    }
-                    i += 2;
-                    if (words.length > i + 3 && (words[i + 1].equals(".")&& !words[i + 2].equals("\n"))) {
-                        i++;
-                    }
-                }
-                if (words.length > i + 2) {
-                    forms = getForms(words, i, (int) Double.parseDouble(word.replace(",", ".")) % 10 == 1);
-                }
-                forms[1] = 8;
-                if (word.contains(",") && (words.length > i + 2) && (words[i + 2].matches("(руб[а-я]*)|(дол[а-я]*)|(евр[а-я]*)"))) {
-                    result[i] = convertFractionalNumberToWords(Double.parseDouble(word.replace(",", ".")), forms, words[i + 2]);
-                    words[i + 1] = words[i + 2] = "";
-                } else {
-                    result[i] = convertFractionalNumberToWords(Double.parseDouble(word.replace(",", ".")), forms);
-                }
-
-            } else if ((words.length > i + 1) && (words[i + 1].matches("/\\d+"))) {  // дробные числа через слэш: 3/6, 929/2913
-                i++;
-                word += words[i];
-                double number = Double.parseDouble(word.split("/")[0]) / Double.parseDouble(word.split("/")[1]);
-                if (words.length > i + 2) {
-                    forms = getForms(words, i, (int) number % 10 == 1);
-                }
-                forms[1] = 8;
-                result[i] = convertFractionalNumberToWords(number, forms);
-
-            } else if (word.matches("\\d+")) {  // обычные числа: 6, 9992, 949913; числа с делением тысяч точками: 23.231.865, 5.246; числа с делением тысяч пробелами: 23 231 865, 5 246
-                StringBuilder number = new StringBuilder(word);
-                if (words.length > i + 1) {
-
-                    while ((words.length > i + 1) && (words[i + 1].matches("(\\.\\d+)+"))) {
-                        i++;
-                        number.append(words[i]);
-                    }
-                    while ((words.length > i + 2) && (words[i + 1].matches("(\\s)") && (words[i + 2].matches("\\d{3}")))) {
-                        i += 2;
-                        number.append(words[i]);
-                    }
+                } else if ((words.length > i + 1) && (words[i + 1].matches("(,\\d+)+"))) {  // дробные числа через запятую: 34,9; 1341,0021
+                    i++;
+                    word += words[i];
                     while ((words.length > i + 2) && (words[i + 2].matches("(млн|тыс)"))) {
                         if (words[i + 2].equals("млн")) {
-                            number.append("000000");
+                            word = String.valueOf(Double.parseDouble(word.replace(",", ".")) * 1000000);
                         } else if (words[i + 2].equals("тыс")) {
-                            number.append("000");
+                            word = String.valueOf(Double.parseDouble(word.replace(",", ".")) * 1000);
                         }
                         i += 2;
-                        if ((words.length > i + 3) && (words[i + 1].equals(".") && !words[i + 2].equals("\n"))) {
+                        if (words.length > i + 3 && (words[i + 1].equals(".") && !words[i + 2].equals("\n"))) {
                             i++;
                         }
                     }
                     if (words.length > i + 2) {
-                        forms = getForms(words, i, Integer.parseInt(word) % 10 == 1);
+                        forms = getForms(words, i, (int) Double.parseDouble(word.replace(",", ".")) % 10 == 1);
                     }
+                    forms[1] = 8;
+                    if (word.contains(",") && (words.length > i + 2) && (words[i + 2].matches("(руб[а-я]*)|(дол[а-я]*)|(евр[а-я]*)"))) {
+                        result[i] = convertFractionalNumberToWords(Double.parseDouble(word.replace(",", ".")), forms, words[i + 2]);
+                        words[i + 1] = words[i + 2] = "";
+                    } else {
+                        result[i] = convertFractionalNumberToWords(Double.parseDouble(word.replace(",", ".")), forms);
+                    }
+
+                } else if ((words.length > i + 1) && (words[i + 1].matches("/\\d+"))) {  // дробные числа через слэш: 3/6, 929/2913
+                    i++;
+                    word += words[i];
+                    double number = Double.parseDouble(word.split("/")[0]) / Double.parseDouble(word.split("/")[1]);
+                    if (words.length > i + 2) {
+                        forms = getForms(words, i, (int) number % 10 == 1);
+                    }
+                    forms[1] = 8;
+                    result[i] = convertFractionalNumberToWords(number, forms);
+
+                } else if (word.matches("\\d+")) {  // обычные числа: 6, 9992, 949913; числа с делением тысяч точками: 23.231.865, 5.246; числа с делением тысяч пробелами: 23 231 865, 5 246
+                    StringBuilder number = new StringBuilder(word);
+                    if (words.length > i + 1) {
+
+                        while ((words.length > i + 1) && (words[i + 1].matches("(\\.\\d+)+"))) {
+                            i++;
+                            number.append(words[i]);
+                        }
+                        while ((words.length > i + 2) && (words[i + 1].matches("(\\s)") && (words[i + 2].matches("\\d{3}")))) {
+                            i += 2;
+                            number.append(words[i]);
+                        }
+                        while ((words.length > i + 2) && (words[i + 2].matches("(млн|тыс)"))) {
+                            if (words[i + 2].equals("млн")) {
+                                number.append("000000");
+                            } else if (words[i + 2].equals("тыс")) {
+                                number.append("000");
+                            }
+                            i += 2;
+                            if ((words.length > i + 3) && (words[i + 1].equals(".") && !words[i + 2].equals("\n"))) {
+                                i++;
+                            }
+                        }
+                        if (words.length > i + 2) {
+                            forms = getForms(words, i, Integer.parseInt(word) % 10 == 1);
+                        }
+                    }
+                    result[i] = convertNumberToWords(Integer.parseInt(number.toString().replaceAll("[ .]", "")), forms);
+
+                } else if (word.matches("\\d+-((?:[тм]и)|(?:[её]м))")) {  // числа с наращениями: 5-ти, 4-ем
+                    word = word.replace("ем", "ём");
+                    result[i] = convertNumberToWords(Integer.parseInt(word.substring(0, word.indexOf("-"))), forms, word.substring(word.indexOf("-") + 1));
+
+                } else if (word.matches("[вВ](о)*-(\\d)+")) {
+                    result[i] = convertEnumToWords(word);
+
+                } else if (word.matches("(\\d)+(-)*([ыо]?й|[ыо]?м|о?е|а?я|ы?х|у?ю|го)")) {  // числа с наращениями: 1980-м, 16-е, 4-ом, 21-х, 5-й, 5й
+                    result[i] = convertOrdinalToWords(word);
+
+                } else {
+                    result[i] = word;
                 }
-                result[i] = convertNumberToWords(Integer.parseInt(number.toString().replaceAll("[ .]", "")), forms);
-
-            } else if (word.matches("\\d+-((?:[тм]и)|(?:[её]м))")) {  // числа с наращениями: 5-ти, 4-ем
-                word = word.replace("ем", "ём");
-                result[i] = convertNumberToWords(Integer.parseInt(word.substring(0, word.indexOf("-"))), forms, word.substring(word.indexOf("-") + 1));
-
-            } else if (word.matches("[вВ](о)*-(\\d)+")) {
-                result[i] = convertEnumToWords(word);
-
-            } else if (word.matches("(\\d)+(-)*([ыо]?й|[ыо]?м|о?е|а?я|ы?х|у?ю|го)")) {  // числа с наращениями: 1980-м, 16-е, 4-ом, 21-х, 5-й, 5й
-                result[i] = convertOrdinalToWords(word);
-
-            } else {
-                result[i] = word;
             }
-        }
 
-        StringBuilder finalText = new StringBuilder();
+
         for (String s : result) {
             if (s != null) {
                 finalText.append(s);
             }
         }
-
+        }
         return finalText.toString();
     }
 
@@ -575,3 +631,114 @@ public class Var5 {
         return "";
     }
 }
+
+
+    /*public String replaceNumber(String text) {
+        long[] forms;  // падеж, род
+        String[] words = text.split("((?<![\\p{L}\\p{N}_-])|(?![\\p{L}\\p{N}_-]))((?<![,./])|(?!(\\p{N})))");  // (?=!(\\p{N}+[,.]\\p{N}+))  |((?<![.,])|(?![\\p{N}.,]))|((?<![\\p{N}.,])|(?![.,]))");  // (?<![\p{L}\p{N}_-])|(?![\p{L}\p{N}_-])|(?<=\d)[,.](?=\d)  text.split("(?<!\\d),(?!\\d)|(?<!-)\s+");  // text.split("(?<![\\p{L}\\p{N}_-])|(?![\\p{L}\\p{N}_-])");
+        String result;
+        StringBuilder sb = new StringBuilder();
+
+        for (int i = 0; i < words.length; i++) {
+            forms = new long[2];
+            String word = words[i];
+
+            if ((((i > 0) && (words[i - 1].equals("\n"))) || (i == 0))
+                    && ((words.length > i + 1) && (word.matches("\\d+") && (words[i + 1].equals(".") || words[i + 1].equals(")"))))) {  // нумерованный список
+                result = word;
+                sb.append(result);
+
+            } else if ((word.matches("(8|\\+7|7)[0-9]{7,10}"))) {  // номера телефонов
+                result = word;
+                sb.append(result);
+
+            } else if ((words.length > i + 1) && (words[i + 1].matches("(,\\d+)+"))) {  // дробные числа через запятую: 34,9; 1341,0021 и валюта: 30,5 рублей, 43,23 доллара
+                i++;
+                word += words[i];
+                while ((words.length > i + 2) && (words[i + 2].matches("(млн|тыс)"))) {
+                    if (words[i + 2].equals("млн")) {
+                        word = String.valueOf(Double.parseDouble(word.replace(",", ".")) * 1000000);
+                    } else if (words[i + 2].equals("тыс")) {
+                        word = String.valueOf(Double.parseDouble(word.replace(",", ".")) * 1000);
+                    }
+                    i += 2;
+                    if (words.length > i + 3 && (words[i + 1].equals(".")&& !words[i + 2].equals("\n"))) {
+                        i++;
+                    }
+                }
+                if (words.length > i + 2) {
+                    forms = getForms(words, i, (int) Double.parseDouble(word.replace(",", ".")) % 10 == 1);
+                }
+                forms[1] = 8;
+                if (word.contains(",") && (words.length > i + 2) && (words[i + 2].matches("(руб[а-я]*)|(дол[а-я]*)|(евр[а-я]*)"))) {
+                    result = convertFractionalNumberToWords(Double.parseDouble(word.replace(",", ".")), forms, words[i + 2]);
+                    words[i + 1] = words[i + 2] = "";
+                } else {
+                    result = convertFractionalNumberToWords(Double.parseDouble(word.replace(",", ".")), forms);
+                }
+
+                changeFirstLetter(result, sb);
+
+            } else if ((words.length > i + 1) && (words[i + 1].matches("/\\d+"))) {  // дробные числа через слэш: 3/6, 929/2913
+                i++;
+                word += words[i];
+                double number = Double.parseDouble(word.split("/")[0]) / Double.parseDouble(word.split("/")[1]);
+                if (words.length > i + 2) {
+                    forms = getForms(words, i, (int) number % 10 == 1);
+                }
+                forms[1] = 8;
+                result = convertFractionalNumberToWords(number, forms);
+                changeFirstLetter(result, sb);
+
+            } else if (word.matches("\\d{1,9}")) {  // обычные числа: 6, 9992, 949913; числа с делением тысяч точками: 23.231.865, 5.246; числа с делением тысяч пробелами: 23 231 865, 5 246
+                StringBuilder number = new StringBuilder(word);
+
+                if (words.length > i + 1) {
+                    while ((words.length > i + 1) && (words[i + 1].matches("(\\.\\d{3})+"))) {
+                        i++;
+                        number.append(words[i]);
+                    }
+                    while ((words.length > i + 2) && (words[i + 1].matches("(\\s)") && (words[i + 2].matches("\\d{3}")))) {
+                        i += 2;
+                        number.append(words[i]);
+                    }
+                    while ((words.length > i + 2) && (words[i + 2].matches("(млн|тыс)"))) {
+                        if (words[i + 2].equals("млн")) {
+                            number.append("000000");
+                        } else if (words[i + 2].equals("тыс")) {
+                            number.append("000");
+                        }
+                        i += 2;
+                        if ((words.length > i + 3) && (words[i + 1].equals(".") && !words[i + 2].equals("\n"))) {
+                            i++;
+                        }
+                    }
+                    if (words.length > i + 2) {
+                        forms = getForms(words, i, Integer.parseInt(word) % 10 == 1);
+                    }
+                }
+
+                result = convertNumberToWords(Integer.parseInt(number.toString().replaceAll("[ .]", "")), forms);
+                changeFirstLetter(result, sb);
+
+            } else if (word.matches("\\d+-((?:[тм]и)|(?:[её]м))")) {  // числа с наращениями: 5-ти, 4-ем
+                word = word.replace("ем", "ём");
+                result = convertNumberToWords(Integer.parseInt(word.substring(0, word.indexOf("-"))), forms, word.substring(word.indexOf("-") + 1));
+                changeFirstLetter(result, sb);
+
+            } else if (word.matches("[вВ](о)*-(\\d)+")) {  // перечисления: во-1, в-23
+                result = convertEnumToWords(word);
+                changeFirstLetter(result, sb);
+
+            } else if (word.matches("(\\d)+(-)*([ыо]?й|[ыо]?м|о?е|а?я|ы?х|у?ю|го)")) {  // числа с наращениями: 1980-м, 16-е, 4-ом, 21-х, 5-й, 5й
+                result = convertOrdinalToWords(word);
+                changeFirstLetter(result, sb);
+
+            } else {
+                sb.append(word);
+            }
+        }
+
+        return sb.toString();
+    }
+    */

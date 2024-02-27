@@ -64,12 +64,14 @@ public class NumeralsConverter {
             } else if ((words.length > i + 1) && (words[i + 1].matches("/\\d+"))) {  // дробные числа через слэш: 3/6, 929/2913
                 i++;
                 word += words[i];
-                double number = Double.parseDouble(word.split("/")[0]) / Double.parseDouble(word.split("/")[1]);
+
                 if (words.length > i + 2) {
-                    forms = getForms(words, i, (int) number % 10 == 1);
+                    forms = getForms(words, i, Integer.parseInt(word.split("/")[1]) % 10 == 1);
                 }
-                forms[1] = 8;
-                result = new StringBuilder(convertFractionalNumberToWords(number, forms));
+
+                forms[1] = 8L;
+                result = new StringBuilder(convertFractionalWithSlash(word, forms));
+
                 changeFirstLetter(result.toString(), sb);
 
             } else if (word.matches("\\d{1,9}")) {  // обычные числа: 6, 9992, 949913; числа с делением тысяч точками: 23.231.865, 5.246; числа с делением тысяч пробелами: 23 231 865, 5 246
@@ -168,11 +170,7 @@ public class NumeralsConverter {
                     System.out.println("существительное: " + form + " " + form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER));
                     forms[1] = form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Gender.class);
                     if (forms[0] == 0 && (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) != MorfologyParameters.Case.GENITIVE1)) {
-//                            if (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.NOMINATIVE
-//                                    || form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.ACCUSATIVE ||
-//                                    form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.ACCUSATIVE2) {
                         list.add(form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER));
-//                            }
                     }
                 }
             }
@@ -182,6 +180,9 @@ public class NumeralsConverter {
                 } else {
                     forms[0] = list.get(0);
                 }
+                return forms;
+            }
+            if (forms[1] != 0) {
                 return forms;
             }
             ++i;
@@ -282,6 +283,28 @@ public class NumeralsConverter {
             }
         }
         return "";
+    }
+
+    public String convertFractionalWithSlash(String number, long[] forms) {
+        String[] onesOrdinal = {"нулевых", "первых", "вторых", "третьих", "четвертых", "пятых", "шестых", "седьмых", "восьмых", "девятых", "десятых", "одиннадцатых", "двенадцатых", "тринадцатых", "четырнадцатых", "пятнадцатых", "шестнадцатых", "семнадцатых", "восемнадцатых", "девятнадцатых"};
+        String[] tensOrdinal = {"", "", "двадцатых", "тридцатых", "сороковых", "пятидесятых", "шестидесятых", "семидесятых", "восьмидесятых", "девяностых"};
+
+        String[] result = number.split("/");
+        result[0] = convertNumberToWords(Integer.parseInt(result[0]), forms);
+        String word = convertNumberToWords(Integer.parseInt(result[1]), new long[]{0, 0});
+
+        String[] words = word.split(" ");
+        int secondNumber = Integer.parseInt(result[1]);
+
+        if (secondNumber < 20) {
+            words[words.length - 1] = onesOrdinal[secondNumber];
+        } else if (secondNumber % 10 != 0) {
+            words[words.length - 1] = onesOrdinal[secondNumber % 10];
+        } else {
+            words[words.length - 1] = tensOrdinal[secondNumber / 10];
+        }
+
+        return result[0] + " " + String.join(" ", words);
     }
 
     public String convertEnumToWords(String enumer) {
@@ -440,11 +463,13 @@ public class NumeralsConverter {
         forms[1] = 0;
         String whole, fractional;
 
+        boolean mainPart = (integerPart % 100 < 21 && integerPart % 100 > 10) || integerPart % 10 >= 5 || integerPart % 10 == 0;
+        boolean minorPart = (fractionalPart % 100 < 21 && fractionalPart % 100 > 10) || fractionalPart % 10 >= 5 || fractionalPart % 10 == 0;
         switch (currency.substring(0, 3)) {
 
             case "руб":
                 if (forms[0] == 64 || forms[0] == 0) {
-                    if ((integerPart % 100 < 21 && integerPart % 100 > 10) || integerPart % 10 >= 5 || integerPart % 10 == 0) {
+                    if (mainPart) {
                         whole = "рублей";
                     } else if (integerPart % 10 == 1) {
                         whole = "рубль";
@@ -456,7 +481,7 @@ public class NumeralsConverter {
                 }
 
                 if (forms[0] == 64 || forms[0] == 0) {
-                    if ((fractionalPart % 100 < 21 && fractionalPart % 100 > 10) || fractionalPart % 10 >= 5 || fractionalPart % 10 == 0) {
+                    if (minorPart) {
                         fractional = "копеек";
                     } else if (fractionalPart % 10 == 1) {
                         fractional = "копейка";
@@ -470,7 +495,7 @@ public class NumeralsConverter {
 
             case "дол":
                 if (forms[0] == 64 || forms[0] == 0) {
-                    if ((integerPart % 100 < 21 && integerPart % 100 > 10) || integerPart % 10 >= 5 || integerPart % 10 == 0) {
+                    if (mainPart) {
                         whole = "долларов";
                     } else if (integerPart % 10 == 1) {
                         whole = "доллар";
@@ -482,7 +507,7 @@ public class NumeralsConverter {
                 }
 
                 if (forms[0] == 64 || forms[0] == 0) {
-                    if ((fractionalPart % 100 < 21 && fractionalPart % 100 > 10) || fractionalPart % 10 >= 5 || fractionalPart % 10 == 0) {
+                    if (minorPart) {
                         fractional = "центов";
                     } else if (fractionalPart % 10 == 1) {
                         fractional = "цент";

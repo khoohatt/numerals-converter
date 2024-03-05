@@ -243,7 +243,7 @@ public class NumeralsConverter {
         }
 
         if (num / 1000 > 0) {
-            result.append(convertNumberToWords(num / 1000, new long[]{forms[0] != 0 ? forms[0] : 512, 8})).append(" ").append(getWordForms(num / 1000, thousands, forms[0])).append(" ");
+            result.append(convertNumberToWords(num / 1000, new long[]{forms[0] != 0 ? forms[0] : 512, 8})).append(" ").append(getFormedThousand(forms, (num / 1000) % 10)).append(" ");
             num = num % 1000;
         }
 
@@ -603,6 +603,7 @@ public class NumeralsConverter {
 
         } else {
             result = forms[0];
+//            result = "тысяча";
             JMorfSdk jMorfSdk = JMorfSdkFactory.loadFullLibrary();
             final String[] number = {""};
             for (String s : jMorfSdk.getDerivativeFormLiterals(result, MorfologyParameters.TypeOfSpeech.NOUN)) {
@@ -618,10 +619,56 @@ public class NumeralsConverter {
         return result;
     }
 
-    private String getFormedNumber(long[] forms, String num) {
+    private String getFormedThousand(long[] forms, int num) {
+        if (num == 1) {
+            if (forms[0] == 64L || forms[0] == 0) {
+                System.out.println("именительный");
+                return "тысяча";
+            } else if (forms[0] == 192L) {
+                System.out.println("дательный");
+                return "тысяче";
+            } else if (forms[0] == 128L) {
+                System.out.println("родительный");
+                return "тысячи";
+            } else if (forms[0] == 512L) {
+                System.out.println("винительный");
+                return "тысячу";
+            } else if (forms[0] == 320L) {
+                System.out.println("творительный");
+                return "тысячей";
+            } else if (forms[0] == 576L || forms[0] == 448L) {
+                System.out.println("предложный");
+                return "тысяче";
+            }
+        } else {
+            if (forms[0] == 64L || forms[0] == 0) {
+                if (num > 1 && num < 5) {
+                    return "тысячи";
+                } else {
+                    return "тысяч";
+                }
+            } else if (forms[0] == 192L) {
+                return "тысячам";
+            } else if (forms[0] == 128L) {
+                if (num > 1 && num < 5) {
+                    return "тысячи";
+                } else {
+                    return "тысяч";
+                }
+            } else if (forms[0] == 512L) {
+                return "тысячи";
+            } else if (forms[0] == 320L) {
+                return "тысячами";
+            } else if (forms[0] == 576L || forms[0] == 448L) {
+                return "тысячах";
+            }
+        }
+        return "тысячи";
+    }
 
+    private String getFormedNumber(long[] forms, String num) {  // todo рефакторинг :(
         byte param;
-        if (num.startsWith("тысяч") || num.startsWith("ноль")) {
+        if (num.startsWith("ноль")) {
             param = MorfologyParameters.TypeOfSpeech.NOUN;
         } else {
             param = MorfologyParameters.TypeOfSpeech.NUMERAL;

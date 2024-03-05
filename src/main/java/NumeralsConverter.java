@@ -144,7 +144,7 @@ public class NumeralsConverter {
     }
 
     private void changeFirstLetter(String string, StringBuilder sb) {
-        if ((sb.length() > 0 && (sb.charAt(sb.length() - 1) == '\n')
+        if ((sb.length() > 0 && string.length() > 0 && (sb.charAt(sb.length() - 1) == '\n')
                 || ((sb.length() > 1) && (sb.substring(sb.length() - 1).matches("[!.?]")))) || (sb.length() == 0)) {
             sb.append(string.substring(0, 1).toUpperCase()).append(string.substring(1));
         } else {
@@ -161,7 +161,9 @@ public class NumeralsConverter {
             forms = getFormsWithPreposition(words, i);
         }
 
-        while (i < words.length && !words[i].matches("[.,;:!?]|лет|метров|дней|месяцев|рублей|долларов")) {
+
+        while (i < words.length && !words[i].matches("[.,;:!?]") && !words[i].matches("лет|метров|дней|месяцев|рублей|долларов|раз|километров|минут|часов")) {
+            System.out.println(words[i]);
             List<Long> list = new LinkedList<>();
             for (Form form : jMorfSdk.getOmoForms(words[i])) {
                 if (form.getTypeOfSpeech() == MorfologyParameters.TypeOfSpeech.NOUN
@@ -169,13 +171,14 @@ public class NumeralsConverter {
                 ) {
                     System.out.println("существительное: " + form + " " + form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER));
                     forms[1] = form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Gender.class);
-                    if (forms[0] == 0 && (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) != MorfologyParameters.Case.GENITIVE1)) {
+                    if (forms[0] == 0 && (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) != MorfologyParameters.Case.GENITIVE1)
+                            && !((form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.NOMINATIVE) && words[i].matches("мая|марта"))) {
                         list.add(form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER));
                     }
                 }
             }
             if (!list.isEmpty()) {
-                if (list.contains(64L)) {
+                if (list.contains(64L) || list.contains(640L)) {
                     forms[0] = 64L;
                 } else {
                     forms[0] = list.get(0);
@@ -192,24 +195,31 @@ public class NumeralsConverter {
     }
 
     public long[] getFormsWithPreposition(String[] words, int i) {
-        if (words[i - 3].matches("по")) {
-            System.out.println("именительный для числительного?");
-            return new long[]{64L, 0};
-        } else if (words[i - 3].matches("к|ко|по|благодаря|вопреки|согласно")) {
-            System.out.println("дательный");
-            return new long[]{192L, 0};
-        } else if (words[i - 3].matches("с|у|от|до|из|без|для|вокруг|около|возле|кроме")) {
-            System.out.println("родительный");
-            return new long[]{128L, 0};
-        } else if (words[i - 3].matches("под|за|про|через|в|на|во")) {
-            System.out.println("винительный");
-            return new long[]{512L, 0};
-        } else if (words[i - 3].matches("с|со|за|над|под|между|перед")) {
-            System.out.println("творительный");
-            return new long[]{320L, 0};
-        } else if (words[i - 3].matches("в|о|об|на|при|по")) {
-            System.out.println("предложный");
-            return new long[]{576L, 0};
+        int j = 2;
+        while ((i - j >= 0) && (words[i - j + 2].matches("\\b\\S*\\d\\S*\\b") || words[i - j + 1].matches("\\b\\S*\\d\\S*\\b") || words[i - j].matches("\\b\\S*\\d\\S*\\b"))) {
+            if (words[i + 1].matches("году|месяце") && words[i - j].matches("в")) {
+                System.out.println("предложный");
+                return new long[]{448L, 0};
+            } else if (words[i - j].matches("по")) {
+                System.out.println("именительный для числительного?");
+                return new long[]{64L, 0};
+            } else if (words[i - j].matches("к|ко|по|благодаря|вопреки|согласно")) {
+                System.out.println("дательный");
+                return new long[]{192L, 0};
+            } else if (words[i - j].matches("с|у|от|до|из|без|для|вокруг|около|возле|кроме|более")) {
+                System.out.println("родительный");
+                return new long[]{128L, 0};
+            } else if (words[i - j].matches("под|за|про|через|в|на|во")) {
+                System.out.println("винительный");
+                return new long[]{512L, 0};
+            } else if (words[i - j].matches("с|со|за|над|под|между|перед")) {
+                System.out.println("творительный");
+                return new long[]{320L, 0};
+            } else if (words[i - j].matches("в|о|об|на|при|по")) {
+                System.out.println("предложный");
+                return new long[]{576L, 0};
+            }
+            j += 1;
         }
         return new long[]{0, 0};
     }
@@ -428,7 +438,7 @@ public class NumeralsConverter {
         } else if (fractionalStr.length() > 1) {
             integerWords += " целых " + fractionalWords + " сотых";
         } else if (fractionalStr.length() == 1) {
-            integerWords += " целые " + fractionalWords + " десятых";
+            integerWords += " целых " + fractionalWords + " десятых";
 //           integerWords += " " + getFractionalForm("целых", forms) + " " + fractionalWords + " " + getFractionalForm("десятых", forms);
         }
 

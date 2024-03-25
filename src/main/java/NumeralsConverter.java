@@ -163,13 +163,12 @@ public class NumeralsConverter {
 
 
         while (i < words.length && !words[i].matches("[.,;:!?]") && !words[i].matches("лет|метров|дней|месяцев|рублей|долларов|раз|километров|минут|часов")) {
-            System.out.println(words[i]);
             List<Long> list = new LinkedList<>();
             for (Form form : jMorfSdk.getOmoForms(words[i])) {
                 if (form.getTypeOfSpeech() == MorfologyParameters.TypeOfSpeech.NOUN
                         && (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Numbers.class) == MorfologyParameters.Numbers.PLURAL ^ single)
                 ) {
-                    System.out.println("существительное: " + form + " " + form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER));
+//                    System.out.println("существительное: " + form + " " + form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER));
                     forms[1] = form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Gender.class);
                     if (forms[0] == 0 && (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) != MorfologyParameters.Case.GENITIVE1)
                             && !((form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.NOMINATIVE) && words[i].matches("мая|марта"))) {
@@ -190,7 +189,6 @@ public class NumeralsConverter {
             }
             ++i;
         }
-        //        jMorfSdk.finish();
         return forms;
     }
 
@@ -198,25 +196,25 @@ public class NumeralsConverter {
         int j = 2;
         while ((i - j >= 0) && (words[i - j + 2].matches("\\b\\S*\\d\\S*\\b") || words[i - j + 1].matches("\\b\\S*\\d\\S*\\b") || words[i - j].matches("\\b\\S*\\d\\S*\\b"))) {
             if (words[i + 1].matches("году|месяце") && words[i - j].matches("в")) {
-                System.out.println("предложный");
+//                System.out.println("предложный");
                 return new long[]{448L, 0};
             } else if (words[i - j].matches("по")) {
-                System.out.println("именительный для числительного?");
+//                System.out.println("именительный для числительного?");
                 return new long[]{64L, 0};
             } else if (words[i - j].matches("к|ко|по|благодаря|вопреки|согласно")) {
-                System.out.println("дательный");
+//                System.out.println("дательный");
                 return new long[]{192L, 0};
             } else if (words[i - j].matches("с|у|от|до|из|без|для|вокруг|около|возле|кроме|более")) {
-                System.out.println("родительный");
+//                System.out.println("родительный");
                 return new long[]{128L, 0};
             } else if (words[i - j].matches("под|за|про|через|в|на|во")) {
-                System.out.println("винительный");
+//                System.out.println("винительный");
                 return new long[]{512L, 0};
             } else if (words[i - j].matches("с|со|за|над|под|между|перед")) {
-                System.out.println("творительный");
+//                System.out.println("творительный");
                 return new long[]{320L, 0};
             } else if (words[i - j].matches("в|о|об|на|при|по")) {
-                System.out.println("предложный");
+//                System.out.println("предложный");
                 return new long[]{576L, 0};
             }
             j += 1;
@@ -228,8 +226,6 @@ public class NumeralsConverter {
         String[] ones = {"ноль", "один", "два", "три", "четыре", "пять", "шесть", "семь", "восемь", "девять", "десять", "одиннадцать", "двенадцать", "тринадцать", "четырнадцать", "пятнадцать", "шестнадцать", "семнадцать", "восемнадцать", "девятнадцать"};
         String[] tens = {"", "", "двадцать", "тридцать", "сорок", "пятьдесят", "шестьдесят", "семьдесят", "восемьдесят", "девяносто"};
         String[] hundreds = {"", "сто", "двести", "триста", "четыреста", "пятьсот", "шестьсот", "семьсот", "восемьсот", "девятьсот"};
-        String[] thousands = {"тысяча", "тысячи", "тысяч"};
-        String[] millions = {"миллион", "миллиона", "миллионов"};
 
         StringBuilder result = new StringBuilder();
 
@@ -238,7 +234,7 @@ public class NumeralsConverter {
         }
 
         if (num / 1000000 > 0) {
-            result.append(convertNumberToWords(num / 1000000, forms)).append(" ").append(getWordForms(num / 1000000, millions, forms[0])).append(" ");
+            result.append(convertNumberToWords(num / 1000000, forms)).append(" ").append(getFormedMillions(forms, (num / 1000000) % 10)).append(" ");
             num = num % 1000000;
         }
 
@@ -284,10 +280,7 @@ public class NumeralsConverter {
 
         for (String s : jMorfSdk.getDerivativeFormLiterals(date, MorfologyParameters.TypeOfSpeech.ADJECTIVE_FULL)) {
             for (Form form : jMorfSdk.getOmoForms(s)) {
-                if (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == forms[0]
-//                        && ((form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Numbers.IDENTIFIER) == MorfologyParameters.Numbers.SINGULAR) == isSingular)
-                ) {
-                    System.out.println("число (дата): " + form);
+                if (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == forms[0]) {
                     return form.getMyString();
                 }
             }
@@ -544,7 +537,6 @@ public class NumeralsConverter {
             for (Form form : jMorfSdk.getOmoForms(s)) {
                 if (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == forms) {
                     if (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Numbers.IDENTIFIER) == MorfologyParameters.Numbers.PLURAL) {
-                        System.out.println("число: " + form);
                         return form.getMyString();
                     }
                 }
@@ -563,7 +555,6 @@ public class NumeralsConverter {
 //        ЧАСТЬ РЕЧИ - [18, 18, 18]
 //        13:12:40.497 [main] DEBUG ru.textanalysis.tawt.jmorfsdk.JMorfSdkImpl - В словаре начальные формы для литерала: десятых
 //        13:12:40.497 [main] DEBUG ru.textanalysis.tawt.jmorfsdk.JMorfSdkImpl - В словаре отсутствует производное слов, слова: десятых с частью речи: 18
-//        ???
 
         JMorfSdk jMorfSdk = JMorfSdkFactory.loadFullLibrary();
         System.out.println("ЧАСТЬ РЕЧИ - " + jMorfSdk.getTypeOfSpeeches(word));
@@ -583,61 +574,25 @@ public class NumeralsConverter {
         return "";
     }
 
-    private String getWordForms(int value, String[] forms, long identifier) {
-        String result;
-        if (identifier == 0 || identifier == 512 || identifier == 128) {  // именительный и винительный падежи
-            if (value % 100 >= 11 && value % 100 <= 19) {
-                result = forms[2];
-            } else if (value % 10 == 1) {
-                result = forms[0];
-            } else if (value % 10 >= 2 && value % 10 <= 4) {
-                result = forms[1];
-            } else {
-                result = forms[2];
-            }
-
-//        13:08:29.213 [main] DEBUG ru.textanalysis.tawt.jmorfsdk.JMorfSdkImpl - В словаре начальные формы для литерала: тысяч
-//        13:08:29.213 [main] DEBUG ru.textanalysis.tawt.jmorfsdk.JMorfSdkImpl - В словаре отсутствует производное слов, слова: тысяч с частью речи: 28 - числительное
-//        13:09:24.624 [main] DEBUG ru.textanalysis.tawt.jmorfsdk.JMorfSdkImpl - В словаре начальные формы для литерала: тысячи
-//        13:09:24.624 [main] DEBUG ru.textanalysis.tawt.jmorfsdk.JMorfSdkImpl - В словаре отсутствует производное слов, слова: тысячи с частью речи: 17 - существительное
-
-        } else {
-            result = forms[0];
-//            result = "тысяча";
-            JMorfSdk jMorfSdk = JMorfSdkFactory.loadFullLibrary();
-            final String[] number = {""};
-            for (String s : jMorfSdk.getDerivativeFormLiterals(result, MorfologyParameters.TypeOfSpeech.NOUN)) {
-                for (Form form : jMorfSdk.getOmoForms(s)) {
-                    if ((form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == identifier)) {
-                        System.out.println("порядок: " + form);
-                        number[0] = form.getMyString();
-                    }
-                }
-            }
-            return number[0];
-        }
-        return result;
-    }
-
     private String getFormedThousand(long[] forms, int num) {
         if (num == 1) {
             if (forms[0] == 64L || forms[0] == 0) {
-                System.out.println("именительный");
+//                System.out.println("именительный");
                 return "тысяча";
             } else if (forms[0] == 192L) {
-                System.out.println("дательный");
+//                System.out.println("дательный");
                 return "тысяче";
             } else if (forms[0] == 128L) {
-                System.out.println("родительный");
+//                System.out.println("родительный");
                 return "тысячи";
             } else if (forms[0] == 512L) {
-                System.out.println("винительный");
+//                System.out.println("винительный");
                 return "тысячу";
             } else if (forms[0] == 320L) {
-                System.out.println("творительный");
+//                System.out.println("творительный");
                 return "тысячей";
             } else if (forms[0] == 576L || forms[0] == 448L) {
-                System.out.println("предложный");
+//                System.out.println("предложный");
                 return "тысяче";
             }
         } else {
@@ -666,6 +621,47 @@ public class NumeralsConverter {
         return "тысячи";
     }
 
+    private String getFormedMillions(long[] forms, int num) {
+        if (num == 1) {
+            if (forms[0] == 64L || forms[0] == 0) {
+                return "миллион";
+            } else if (forms[0] == 192L) {
+                return "миллиону";
+            } else if (forms[0] == 128L) {
+                return "миллиона";
+            } else if (forms[0] == 512L) {
+                return "миллион";
+            } else if (forms[0] == 320L) {
+                return "миллионом";
+            } else if (forms[0] == 576L || forms[0] == 448L) {
+                return "миллионе";
+            }
+        } else {
+            if (forms[0] == 64L || forms[0] == 0) {
+                if (num > 1 && num < 5) {
+                    return "миллиона";
+                } else {
+                    return "миллионов";
+                }
+            } else if (forms[0] == 192L) {
+                return "миллионам";
+            } else if (forms[0] == 512L) {
+                if (num > 1 && num < 5) {
+                    return "миллиона";
+                } else {
+                    return "миллионов";
+                }
+            } else if (forms[0] == 128L) {
+                return "миллионов";
+            } else if (forms[0] == 320L) {
+                return "миллионами";
+            } else if (forms[0] == 576L || forms[0] == 448L) {
+                return "миллионах";
+            }
+        }
+        return "тысячи";
+    }
+
     private String getFormedNumber(long[] forms, String num) {  // todo рефакторинг :(
         byte param;
         if (num.startsWith("ноль")) {
@@ -684,13 +680,10 @@ public class NumeralsConverter {
 
             for (String s : jMorfSdk.getDerivativeFormLiterals(num, param)) {
                 for (Form form : jMorfSdk.getOmoForms(s)) {
-                    if ((form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == forms[0] && form.getMorphCharacteristics() != 514)
-//                            || (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == 128 && form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == 512)
-                    ) {
+                    if ((form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == forms[0] && form.getMorphCharacteristics() != 514)) {
                         if ((form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Gender.class) == 0)
                                 || (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Gender.class) == forms[1])
                                 || (s.equals("ноль"))) {
-                            System.out.println("число (form[0] != 0): " + form);
                             return form.getMyString();
                         }
                     }
@@ -704,14 +697,12 @@ public class NumeralsConverter {
                 for (Form form : jMorfSdk.getOmoForms(s)) {
                     if (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.NOMINATIVE) {
                         if (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Gender.class) == forms[1]) {
-                            System.out.println("число (form[1] != 0, именительный): " + form);
                             return form.getMyString();
                         }
 
                     } else if ((form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.ACCUSATIVE) ||
                             (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Case.IDENTIFIER) == MorfologyParameters.Case.ACCUSATIVE2)) {
                         if (form.getMorfCharacteristicsByIdentifier(MorfologyParameters.Gender.class) == forms[1]) {
-                            System.out.println("число (form[1] != 0, винительный): " + form);
                             return form.getMyString();
                         }
                     }
@@ -727,7 +718,6 @@ public class NumeralsConverter {
         for (String s : jMorfSdk.getDerivativeFormLiterals(num, MorfologyParameters.TypeOfSpeech.NUMERAL)) {
             for (Form form : jMorfSdk.getOmoForms(s)) {
                 if (form.getMyString().substring(buildup.length()).endsWith(buildup)) {
-                    System.out.println("число: " + form);
                     return form.getMyString();
                 }
             }
@@ -736,7 +726,6 @@ public class NumeralsConverter {
         for (String s : jMorfSdk.getDerivativeFormLiterals(num, MorfologyParameters.TypeOfSpeech.COLLECTIVE_NUMERAL)) {  // без результата
             for (Form form : jMorfSdk.getOmoForms(s)) {
                 if (form.getMyString().substring(buildup.length()).endsWith(buildup)) {
-                    System.out.println("число: " + form);
                     return form.getMyString();
                 }
             }
